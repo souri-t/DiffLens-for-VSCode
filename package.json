@@ -1,8 +1,14 @@
 {
   "name": "diff-lens",
-  "displayName": "DiffLens",
+  "displayName": "diff-lens",
   "description": "AI-powered git diff code review using AWS Bedrock or VS Code Language Models",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "publisher": "souri-t",
+  "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/souri-t/DiffLens-for-VSCode.git"
+  },
   "engines": {
     "vscode": "^1.101.0"
   },
@@ -106,7 +112,10 @@
         "diffLens.llmProvider": {
           "type": "string",
           "default": "bedrock",
-          "enum": ["bedrock", "vscode-lm"],
+          "enum": [
+            "bedrock",
+            "vscode-lm"
+          ],
           "enumDescriptions": [
             "AWS Bedrock",
             "VS Code Language Model API"
@@ -148,7 +157,10 @@
         "diffLens.interfaceLanguage": {
           "type": "string",
           "default": "en",
-          "enum": ["en", "ja"],
+          "enum": [
+            "en",
+            "ja"
+          ],
           "enumDescriptions": [
             "English",
             "Japanese (日本語)"
