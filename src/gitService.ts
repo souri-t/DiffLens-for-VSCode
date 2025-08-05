@@ -182,7 +182,7 @@ export async function isGitRepository(workspaceFolder: string, forceRefresh: boo
 	}
 }
 
-// Get changes between commits using VS Code Git API
+// Get changes between commits using VS Code Git API with enhanced details
 export async function getChangesFromGitAPI(repository: Repository, fromCommit: string, toCommit: string = 'HEAD'): Promise<Change[]> {
 	try {
 		logGitOperation('getChangesFromGitAPI: Getting changes between commits', {
@@ -193,12 +193,50 @@ export async function getChangesFromGitAPI(repository: Repository, fromCommit: s
 		// Get changes between two commits
 		const changes = await repository.diffBetween(fromCommit, toCommit);
 		
-		logGitOperation('getChangesFromGitAPI: Found changes', {
-			count: changes.length,
-			files: changes.map(c => c.uri.fsPath)
+		// Try to enhance changes with additional information
+		const enhancedChanges = await Promise.all(changes.map(async (change) => {
+			try {
+				// Try to get additional file information
+				const relPath = vscode.workspace.asRelativePath(change.uri);
+				
+				// Check if the repository has additional methods for file information
+				if ((repository as any).getFileInfo) {
+					try {
+						const fileInfo = await (repository as any).getFileInfo(fromCommit, relPath);
+						(change as any).fileInfo = fileInfo;
+					} catch (error) {
+						// Ignore if method doesn't exist
+					}
+				}
+				
+				// Try to get file status details
+				if ((repository as any).getStatus) {
+					try {
+						const statusInfo = await (repository as any).getStatus(relPath);
+						(change as any).statusInfo = statusInfo;
+					} catch (error) {
+						// Ignore if method doesn't exist
+					}
+				}
+				
+				return change;
+			} catch (error) {
+				logGitOperation(`Failed to enhance change information for ${change.uri.fsPath}`, error);
+				return change;
+			}
+		}));
+		
+		logGitOperation('getChangesFromGitAPI: Found changes with enhancement attempts', {
+			count: enhancedChanges.length,
+			files: enhancedChanges.map(c => ({
+				path: c.uri.fsPath,
+				status: c.status,
+				hasFileInfo: !!(c as any).fileInfo,
+				hasStatusInfo: !!(c as any).statusInfo
+			}))
 		});
 
-		return changes;
+		return enhancedChanges;
 	} catch (error) {
 		logGitOperation('getChangesFromGitAPI: Failed to get changes', error);
 		throw error;

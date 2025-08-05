@@ -14,6 +14,12 @@ export interface Repository {
 	diff(cached?: boolean): Promise<Change[]>;
 	diffWith(ref: string, path?: string): Promise<Change[]>;
 	diffBetween(ref1: string, ref2: string, path?: string): Promise<Change[]>;
+	// Extended methods that might be available in VS Code Git API
+	show?(ref: string, path?: string): Promise<string>;
+	getObjectContent?(ref: string, path: string): Promise<string>;
+	// Internal methods that might be available
+	_model?: any;
+	_repository?: any;
 }
 
 export interface RepositoryState {

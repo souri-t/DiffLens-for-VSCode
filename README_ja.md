@@ -25,7 +25,7 @@ AWS BedrockまたはVS Code Language Model APIを活用したAIによるgit差�
   - **AWS Bedrock**: AWSアカウントとBedrock利用権限が必要
   - **VS Code LM API**: GitHub Copilotサブスクリプションまたは互換プロバイダーが必要
 
-**注意**: この拡張機能はVS CodeのGit APIを使用するため、システムにGitがインストールされていなくても動作します。ただし、VS CodeのGit拡張機能が有効である必要があります。
+**注意**: この拡張機能はファイル内容取得や差分生成を含む全てのGit操作に、VS CodeのGit APIのみを使用します。外部のGitインストールは不要で、VS CodeのGit拡張機能が有効であれば（デフォルトで有効）動作します。
 
 ## 拡張機能の設定
 

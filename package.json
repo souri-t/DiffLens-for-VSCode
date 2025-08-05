@@ -42,6 +42,12 @@
         "command": "diff-lens.toggleSettings",
         "title": "Toggle Settings",
         "icon": "$(settings-gear)"
+      },
+      {
+        "command": "diff-lens.refreshGitRepo",
+        "title": "Refresh Git Repository",
+        "category": "DiffLens",
+        "icon": "$(refresh)"
       }
     ],
     "views": {

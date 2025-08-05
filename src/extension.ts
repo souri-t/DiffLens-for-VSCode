@@ -148,7 +148,7 @@ async function runCodeReview(selectedCommit?: string, customPrompts?: {systemPro
 		}, async (progress) => {
 			progress.report({ increment: 0, message: 'Getting git diff...' });
 
-			// Get git diff using native git command (same as preview function)
+			// Get git diff using VS Code Git API only (no native git commands)
 			const diff = await generateNativeGitDiff(workspacePath, selectedCommit || null, config.contextLines, config.excludeDeletes, config.fileExtensions);
 			
 			progress.report({ increment: 50, message: `Sending to ${config.llmProvider.toUpperCase()} for review...` });

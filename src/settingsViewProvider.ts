@@ -1,8 +1,4 @@
 import * as vscode from 'vscode';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
 
 // VS Code Git API types (duplicate from extension.ts for self-contained provider)
 interface GitAPI {
@@ -711,48 +707,31 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 });
             }
 
-            // Get current branch - always use git command for reliability
+            // Get current branch - use VS Code API
             let currentBranch = 'unknown';
-            try {
-                const { stdout: gitBranch } = await execAsync('git rev-parse --abbrev-ref HEAD', { cwd: workspacePath });
-                currentBranch = gitBranch.trim();
-                console.log('Current branch via git command:', currentBranch);
-            } catch (error) {
-                console.log('Failed to get current branch via git command:', error);
-                // If git command fails, try VS Code API as backup
-                if (repo && repo.state.HEAD?.name) {
-                    currentBranch = repo.state.HEAD.name;
-                    console.log('Current branch via VS Code API:', currentBranch);
-                }
+            if (repo && repo.state.HEAD?.name) {
+                currentBranch = repo.state.HEAD.name;
+                console.log('Current branch via VS Code API:', currentBranch);
+            } else {
+                console.log('Failed to get current branch: No repository or HEAD information available');
             }
 
-            // Get latest commit info - always use git command for reliability
+            // Get latest commit info - use VS Code API
             let latestCommit = '';
-            try {
-                const { stdout: commitInfo } = await execAsync(
-                    'git log -1 --pretty=format:"%cd (%h) %s" --date=format:"%Y-%m-%d %H:%M:%S"', 
-                    { cwd: workspacePath }
-                );
-                latestCommit = commitInfo.trim();
-                console.log('Latest commit via git command:', latestCommit.substring(0, 50));
-            } catch (error) {
-                console.log('Failed to get latest commit via git command:', error);
-                // If git command fails, try VS Code API as backup
-                if (repo && repo.state.HEAD?.commit) {
-                    try {
-                        const commit = await repo.getCommit(repo.state.HEAD.commit);
-                        const date = commit.authorDate ? commit.authorDate.toISOString().replace('T', ' ').substring(0, 19) : 'unknown';
-                        const shortHash = commit.hash.substring(0, 8);
-                        const message = commit.message.split('\n')[0];
-                        latestCommit = `${date} (${shortHash}) ${message}`;
-                        console.log('Latest commit via VS Code API:', latestCommit.substring(0, 50));
-                    } catch (apiError) {
-                        console.log('Failed to get latest commit via VS Code API:', apiError);
-                        latestCommit = 'Unable to get latest commit';
-                    }
-                } else {
-                    latestCommit = 'No commits found';
+            if (repo && repo.state.HEAD?.commit) {
+                try {
+                    const commit = await repo.getCommit(repo.state.HEAD.commit);
+                    const date = commit.authorDate ? commit.authorDate.toISOString().replace('T', ' ').substring(0, 19) : 'unknown';
+                    const shortHash = commit.hash.substring(0, 8);
+                    const message = commit.message.split('\n')[0];
+                    latestCommit = `${date} (${shortHash}) ${message}`;
+                    console.log('Latest commit via VS Code API:', latestCommit.substring(0, 50));
+                } catch (apiError) {
+                    console.log('Failed to get latest commit via VS Code API:', apiError);
+                    latestCommit = 'Unable to get latest commit';
                 }
+            } else {
+                latestCommit = 'No commits found';
             }
 
             // Get commit history using Git API only
@@ -794,36 +773,23 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             // Combine commit history (which now includes remote branch info) 
             const comparisonOptions = [...commitHistory];
 
-            // Get repository status - prefer git command for accuracy
+            // Get repository status - use VS Code API
             let status = '';
-            try {
-                const { stdout: gitStatus } = await execAsync('git status --porcelain', { cwd: workspacePath });
-                if (gitStatus.trim()) {
-                    const lines = gitStatus.trim().split('\n');
-                    status = `${lines.length} uncommitted changes`;
-                } else {
-                    status = 'Clean working directory';
-                }
-                console.log('Repository status via git command:', status);
-            } catch (error) {
-                console.log('Failed to get status via git command:', error);
-                // If git command fails, try VS Code API as backup
-                if (repo) {
-                    try {
-                        const changes = await repo.diff();
-                        if (changes.length > 0) {
-                            status = `${changes.length} uncommitted changes`;
-                        } else {
-                            status = 'Clean working directory';
-                        }
-                        console.log('Repository status via VS Code API:', status);
-                    } catch (apiError) {
-                        console.log('Failed to get status via VS Code API:', apiError);
-                        status = 'Unable to get status';
+            if (repo) {
+                try {
+                    const changes = await repo.diff();
+                    if (changes.length > 0) {
+                        status = `${changes.length} uncommitted changes`;
+                    } else {
+                        status = 'Clean working directory';
                     }
-                } else {
-                    status = 'Unable to get status';
+                    console.log('Repository status via VS Code API:', status);
+                } catch (error) {
+                    console.log('Failed to get status via VS Code API:', error);
+                    status = 'Unable to get repository status';
                 }
+            } else {
+                status = 'No repository found';
             }
 
             // Add indicator for API type used
