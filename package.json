@@ -2,7 +2,7 @@
   "name": "diff-lens",
   "displayName": "diff-lens",
   "description": "AI-powered git diff code review using AWS Bedrock or VS Code Language Models",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "souri-t",
   "icon": "resources/icon.png",
   "repository": {
