@@ -2,6 +2,8 @@ Language: [English](./README.md) / [Japanese](./README_ja.md)
 
 # DiffLens for VSCode
 
+[![拡張機能をインストール](https://img.shields.io/badge/インストール-VS%20Code%20Marketplace-blue)](https://marketplace.visualstudio.com/items?itemName=souri-t.diff-lens)
+
 AWS BedrockまたはVS Code Language Model APIを活用したAIによるgit差分コードレビュー拡張機能
 
 ## 機能概要

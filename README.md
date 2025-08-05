@@ -2,6 +2,8 @@ Language: [English](./README.md) / [Japanese](./README_ja.md)
 
 # DiffLens for VSCode
 
+[![Install Extension](https://img.shields.io/badge/Install-VS%20Code%20Marketplace-blue)](https://marketplace.visualstudio.com/items?itemName=souri-t.diff-lens)
+
 AI-powered git diff code review using AWS Bedrock or VS Code Language Mod9. **Execute Review**:
    - Click "👁️ Preview Diff" to see the changes that will be reviewed
    - Click "🚀 Run Code Review" to send the diff to your chosen AI provider for analysis
