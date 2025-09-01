@@ -84,6 +84,137 @@ export interface ReviewConfig {
 	vscodeLmVendor: string;
 	vscodeLmFamily: string;
 	fileExtensions: string;
+	maxFileSize: number;
+	fileSizeUnit: 'KB' | 'MB';
+	showExcludedFiles: boolean;
+	excludedFileLimit: number;
+	excludeBinaryFiles: boolean;
+	binaryFileExtensions: string;
+	textFileExtensions: string;
+	binaryDetectionMethod: 'extension' | 'content' | 'both';
+	binaryContentThreshold: number;
+	defaultExportFormat: 'html' | 'json' | 'pdf';
+	exportDirectory: string;
+	exportFilenamePattern: string;
+	exportTemplate: 'standard' | 'minimal' | 'detailed' | 'corporate';
+	includeGitInfo: boolean;
+	includeStatistics: boolean;
+}
+
+// Favorite Prompts interfaces
+export interface FavoritePrompt {
+	id: string;
+	name: string;
+	description: string;
+	tags: string[];
+	systemPrompt: string;
+	reviewPerspective: string;
+	createdAt: string;
+	updatedAt: string;
+	usage: {
+		count: number;
+		lastUsed: string;
+	};
+}
+
+// File exclusion interfaces
+export interface ExcludedFileInfo {
+	path: string;
+	size: number;
+	reason: 'fileSize' | 'binary';
+	readableSize: string;
+}
+
+export interface ExclusionSummary {
+	excludedFiles: ExcludedFileInfo[];
+	summary: {
+		totalFiles: number;
+		totalSize: number;
+		readableTotalSize: string;
+	};
+}
+
+// Export interfaces
+export interface ExportData {
+	exportInfo: {
+		format: string;
+		version: string;
+		timestamp: string;
+		generatedBy: string;
+	};
+	reviewMetadata: {
+		modelName: string;
+		provider: string;
+		systemPrompt: string;
+		reviewPerspective: string;
+		reviewDuration: number;
+		tokenUsage?: {
+			input: number;
+			output: number;
+		};
+	};
+	diffConfiguration: {
+		contextLines: number;
+		excludeDeletes: boolean;
+		fileExtensions: string;
+		excludedFiles: string[];
+		binaryFilesExcluded: boolean;
+		maxFileSize: number;
+	};
+	gitInformation: {
+		repository: string;
+		owner?: string;
+		currentBranch: string;
+		targetBranch?: string;
+		commitHash: string;
+		commitMessage: string;
+		author: string;
+		commitDate: string;
+		changedFiles: Array<{
+			path: string;
+			status: string;
+			additions: number;
+			deletions: number;
+		}>;
+	};
+	reviewContent: {
+		summary: {
+			overallScore: string;
+			criticalIssues: number;
+			majorIssues: number;
+			minorIssues: number;
+			suggestions: number;
+		};
+		categories: Array<{
+			name: string;
+			severity: string;
+			issueCount: number;
+			items: Array<{
+				title: string;
+				description: string;
+				file: string;
+				line: number;
+				severity: string;
+				suggestion: string;
+			}>;
+		}>;
+		fullReview: string;
+		rawReview: string;
+	};
+	statistics: {
+		filesAnalyzed: number;
+		linesAnalyzed: number;
+		filesExcluded: number;
+		reviewWordCount: number;
+	};
+}
+
+export interface ExportHistoryItem {
+	timestamp: string;
+	format: string;
+	filename: string;
+	path: string;
+	size: number;
 }
 
 export interface ReviewResult {

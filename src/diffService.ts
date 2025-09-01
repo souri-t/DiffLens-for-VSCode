@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
-import { Status, Change, Repository, Commit } from './types';
+import { Status, Change, Repository, Commit, ReviewConfig, ExclusionSummary } from './types';
 import { getGitRepository, getChangesFromGitAPI } from './gitService';
 import { logGitOperation } from './logger';
+import { FileFilterService } from './fileFilterService';
 
 const jsdiff = require('diff');
 
@@ -289,8 +290,9 @@ export async function generateNativeGitDiff(
 	compareToCommit: string | null,
 	contextLines: number = 50,
 	excludeDeletes: boolean = true,
-	fileExtensions: string = ''
-): Promise<string> {
+	fileExtensions: string = '',
+	config?: ReviewConfig
+): Promise<{ diff: string; exclusionSummary?: ExclusionSummary }> {
 	try {
 		logGitOperation('generateNativeGitDiff (GitAPI): Starting with parameters', {
 			workspacePath,
@@ -354,10 +356,58 @@ export async function generateNativeGitDiff(
 			);
 		}
 
+		// Apply file filtering (size and binary file exclusion) if config is provided
+		let exclusionSummary: ExclusionSummary | undefined;
+		if (config) {
+			const fileFilterService = new FileFilterService(config);
+			const filePaths = filteredChanges.map(change => change.uri.fsPath);
+			
+			logGitOperation('Applying file filters', {
+				totalFiles: filePaths.length,
+				maxFileSize: config.maxFileSize,
+				excludeBinaryFiles: config.excludeBinaryFiles
+			});
+
+			const filterResult = await fileFilterService.filterFiles(filePaths);
+			exclusionSummary = filterResult.exclusionSummary;
+
+			// Filter out excluded files from changes
+			const includedPaths = new Set(filterResult.includedFiles);
+			filteredChanges = filteredChanges.filter(change => 
+				includedPaths.has(change.uri.fsPath)
+			);
+
+			// Log filtering results
+			logGitOperation('File filtering completed', {
+				originalFiles: filePaths.length,
+				includedFiles: filteredChanges.length,
+				excludedFiles: exclusionSummary.summary.totalFiles,
+				excludedSize: exclusionSummary.summary.readableTotalSize
+			});
+
+			// Show exclusion notification if configured
+			if (config.showExcludedFiles && exclusionSummary.summary.totalFiles > 0) {
+				const message = `${exclusionSummary.summary.totalFiles}個のファイルが除外されました (${exclusionSummary.summary.readableTotalSize})`;
+				vscode.window.showInformationMessage(message, '詳細を表示').then(selection => {
+					if (selection === '詳細を表示') {
+						const report = fileFilterService.generateExclusionReport(exclusionSummary!);
+						vscode.workspace.openTextDocument({
+							content: report,
+							language: 'markdown'
+						}).then(doc => {
+							vscode.window.showTextDocument(doc);
+						});
+					}
+				});
+			}
+		}
+
 		if (filteredChanges.length === 0) {
 			const filterInfo = fileExtensions ? ` with filter "${fileExtensions}"` : '';
 			const compareInfo = compareToCommit ? ` between commit ${compareToCommit.substring(0, 8)} and HEAD` : ' in the latest commit';
-			throw new Error(`No changes found${compareInfo}${filterInfo}`);
+			const exclusionInfo = exclusionSummary && exclusionSummary.summary.totalFiles > 0 ? 
+				` (${exclusionSummary.summary.totalFiles} files excluded by filters)` : '';
+			throw new Error(`No changes found${compareInfo}${filterInfo}${exclusionInfo}`);
 		}
 
 		// Generate diff output for each file
@@ -636,9 +686,13 @@ export async function generateNativeGitDiff(
 				hasHeader: d.includes('diff --git'),
 				firstLine: d.split('\n')[0]
 			})),
-			resultPreview: result.length > 500 ? result.substring(0, 500) + '...' : result
+			resultPreview: result.length > 500 ? result.substring(0, 500) + '...' : result,
+			exclusionSummary: exclusionSummary ? {
+				totalExcluded: exclusionSummary.summary.totalFiles,
+				totalSize: exclusionSummary.summary.readableTotalSize
+			} : undefined
 		});
-		return result;
+		return { diff: result, exclusionSummary };
 	} catch (error) {
 		logGitOperation('generateNativeGitDiff (GitAPI): Error occurred', error);
 		throw new Error(`Failed to generate git diff: ${error}`);
@@ -902,7 +956,8 @@ export async function showDiffPreviewFromCommit(workspacePath: string, commitHas
 		});
 
 		// Generate unified diff using precise VS Code Git API-based method for git show compatibility
-		const diff = await generateNativeGitDiff(workspacePath, commitHash, contextLines, excludeDeletes, fileExtensions);
+		const diffResult = await generateNativeGitDiff(workspacePath, commitHash, contextLines, excludeDeletes, fileExtensions);
+		const diff = diffResult.diff;
 		const shortHash = commitHash.substring(0, 8);
 		
 		const filterInfo = fileExtensions ? `\nFile Extensions Filter: ${fileExtensions}` : '';

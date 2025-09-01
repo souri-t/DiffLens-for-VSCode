@@ -48,6 +48,30 @@
         "title": "Refresh Git Repository",
         "category": "DiffLens",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "diff-lens.saveFavoritePrompt",
+        "title": "Save Current Prompt as Favorite",
+        "category": "DiffLens",
+        "icon": "$(heart)"
+      },
+      {
+        "command": "diff-lens.manageFavoritePrompts",
+        "title": "Manage Favorite Prompts",
+        "category": "DiffLens",
+        "icon": "$(star)"
+      },
+      {
+        "command": "diff-lens.exportReview",
+        "title": "Export Review Results",
+        "category": "DiffLens",
+        "icon": "$(export)"
+      },
+      {
+        "command": "diff-lens.showExcludedFiles",
+        "title": "Show Excluded Files",
+        "category": "DiffLens",
+        "icon": "$(list-filter)"
       }
     ],
     "views": {
@@ -172,6 +196,131 @@
             "Japanese (日本語)"
           ],
           "description": "Interface language for the extension"
+        },
+        "diffLens.favoritePrompts": {
+          "type": "array",
+          "default": [],
+          "description": "保存されたお気に入りプロンプト設定"
+        },
+        "diffLens.maxFavoritePrompts": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 50,
+          "description": "保存可能なお気に入りプロンプトの最大数"
+        },
+        "diffLens.promptAutoSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "プロンプト変更時の自動保存機能"
+        },
+        "diffLens.maxFileSize": {
+          "type": "number",
+          "default": 1048576,
+          "minimum": 0,
+          "description": "最大ファイルサイズ（バイト単位、0で制限なし）"
+        },
+        "diffLens.fileSizeUnit": {
+          "type": "string",
+          "default": "MB",
+          "enum": [
+            "KB",
+            "MB"
+          ],
+          "description": "ファイルサイズ設定の単位"
+        },
+        "diffLens.showExcludedFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "除外されたファイルの通知表示"
+        },
+        "diffLens.excludedFileLimit": {
+          "type": "number",
+          "default": 100,
+          "description": "除外ファイル一覧の表示上限"
+        },
+        "diffLens.excludeBinaryFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "バイナリファイルを自動的に除外"
+        },
+        "diffLens.binaryFileExtensions": {
+          "type": "string",
+          "default": ".jpg,.jpeg,.png,.gif,.bmp,.tiff,.tif,.svg,.webp,.ico,.raw,.mp4,.avi,.mov,.wmv,.flv,.webm,.mkv,.m4v,.3gp,.mp3,.wav,.flac,.aac,.ogg,.wma,.m4a,.zip,.rar,.7z,.tar,.gz,.bz2,.xz,.exe,.dll,.so,.dylib,.app,.deb,.rpm,.ttf,.otf,.woff,.woff2,.eot,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.db,.sqlite,.mdb",
+          "description": "バイナリファイルとして扱う拡張子（カンマ区切り）"
+        },
+        "diffLens.textFileExtensions": {
+          "type": "string",
+          "default": ".svg,.xml,.json,.md,.txt",
+          "description": "明示的にテキストファイルとして扱う拡張子"
+        },
+        "diffLens.binaryDetectionMethod": {
+          "type": "string",
+          "default": "extension",
+          "enum": [
+            "extension",
+            "content",
+            "both"
+          ],
+          "enumDescriptions": [
+            "拡張子のみで判定",
+            "ファイル内容のみで判定",
+            "拡張子と内容の両方で判定"
+          ],
+          "description": "バイナリファイルの判定方法"
+        },
+        "diffLens.binaryContentThreshold": {
+          "type": "number",
+          "default": 0.1,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "バイナリ判定のための非ASCII文字の割合閾値"
+        },
+        "diffLens.defaultExportFormat": {
+          "type": "string",
+          "default": "html",
+          "enum": [
+            "html",
+            "json",
+            "pdf"
+          ],
+          "description": "デフォルトのエクスポート形式"
+        },
+        "diffLens.exportDirectory": {
+          "type": "string",
+          "default": "./reviews",
+          "description": "エクスポートファイルの保存ディレクトリ"
+        },
+        "diffLens.exportFilenamePattern": {
+          "type": "string",
+          "default": "review-{repository}-{branch}-{timestamp}",
+          "description": "エクスポートファイル名のパターン"
+        },
+        "diffLens.exportTemplate": {
+          "type": "string",
+          "default": "standard",
+          "enum": [
+            "standard",
+            "minimal",
+            "detailed",
+            "corporate"
+          ],
+          "description": "エクスポートテンプレート"
+        },
+        "diffLens.includeGitInfo": {
+          "type": "boolean",
+          "default": true,
+          "description": "エクスポートにGit情報を含める"
+        },
+        "diffLens.includeStatistics": {
+          "type": "boolean",
+          "default": true,
+          "description": "エクスポートに統計情報を含める"
+        },
+        "diffLens.exportHistory": {
+          "type": "array",
+          "default": [],
+          "description": "エクスポート履歴（最新20件）"
         }
       }
     }
@@ -204,6 +353,8 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.839.0"
+    "@aws-sdk/client-bedrock-runtime": "^3.839.0",
+    "@types/uuid": "^10.0.0",
+    "uuid": "^11.1.0"
   }
 }

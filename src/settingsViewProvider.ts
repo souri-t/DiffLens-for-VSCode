@@ -376,6 +376,84 @@ const MESSAGES: Messages = {
     'status.commitAlert': {
         en: 'Please select a commit to compare with.',
         ja: '比較対象のコミットを選択してください。'
+    },
+    
+    // Favorite Prompts Section
+    'section.favoritePrompts': {
+        en: '⭐ Favorite Prompts',
+        ja: '⭐ お気に入りプロンプト'
+    },
+    'favoritePrompts.save': {
+        en: 'Save Current Prompts',
+        ja: '現在のプロンプトを保存'
+    },
+    'favoritePrompts.manage': {
+        en: 'Manage Favorites',
+        ja: 'お気に入り管理'
+    },
+    
+    // File Filtering Section
+    'section.fileFiltering': {
+        en: '🔍 File Filtering',
+        ja: '🔍 ファイルフィルタリング'
+    },
+    'fileFilter.maxSize': {
+        en: 'Maximum File Size:',
+        ja: '最大ファイルサイズ:'
+    },
+    'fileFilter.maxSizeDesc': {
+        en: 'Files larger than this size will be excluded from review',
+        ja: 'このサイズより大きいファイルはレビューから除外されます'
+    },
+    'fileFilter.excludeBinary': {
+        en: 'Exclude Binary Files',
+        ja: 'バイナリファイルを除外'
+    },
+    'fileFilter.excludeBinaryDesc': {
+        en: 'Automatically exclude binary files from code review',
+        ja: 'コードレビューからバイナリファイルを自動的に除外'
+    },
+    'fileFilter.binaryExtensions': {
+        en: 'Binary File Extensions:',
+        ja: 'バイナリファイル拡張子:'
+    },
+    'fileFilter.binaryExtensionsDesc': {
+        en: 'Comma-separated list of file extensions to treat as binary',
+        ja: 'バイナリとして扱うファイル拡張子のカンマ区切りリスト'
+    },
+    
+    // Export Settings Section
+    'section.exportSettings': {
+        en: '📤 Export Settings',
+        ja: '📤 エクスポート設定'
+    },
+    'export.directory': {
+        en: 'Export Directory:',
+        ja: 'エクスポートディレクトリ:'
+    },
+    'export.directoryPlaceholder': {
+        en: 'Leave empty to use workspace folder',
+        ja: 'ワークスペースフォルダを使用する場合は空欄にしてください'
+    },
+    'export.directoryDesc': {
+        en: 'Directory where exported review files will be saved',
+        ja: 'エクスポートされたレビューファイルが保存されるディレクトリ'
+    },
+    'export.includeMetadata': {
+        en: 'Include Metadata',
+        ja: 'メタデータを含める'
+    },
+    'export.includeMetadataDesc': {
+        en: 'Include git information and review settings in exported files',
+        ja: 'エクスポートファイルにgit情報とレビュー設定を含める'
+    },
+    'export.autoTimestamp': {
+        en: 'Auto Timestamp',
+        ja: '自動タイムスタンプ'
+    },
+    'export.autoTimestampDesc': {
+        en: 'Automatically add timestamp to exported file names',
+        ja: 'エクスポートファイル名に自動的にタイムスタンプを追加'
     }
 };
 
@@ -1188,6 +1266,74 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             </div>
         </div>
 
+        <!-- Favorite Prompts Section -->
+        <div class="section-title">${this._getMessage('section.favoritePrompts')}</div>
+        
+        <div class="form-group">
+            <div class="buttons" style="margin-bottom: 10px;">
+                <button onclick="saveFavoritePrompt()" style="margin-right: 10px;">
+                    <span class="codicon codicon-heart"></span>
+                    ${this._getMessage('favoritePrompts.save')}
+                </button>
+                <button onclick="manageFavoritePrompts()">
+                    <span class="codicon codicon-star"></span>
+                    ${this._getMessage('favoritePrompts.manage')}
+                </button>
+            </div>
+        </div>
+
+        <!-- File Filtering Section -->
+        <div class="section-title">${this._getMessage('section.fileFiltering')}</div>
+        
+        <div class="form-group">
+            <label for="maxFileSize">${this._getMessage('fileFilter.maxSize')}</label>
+            <input type="number" id="maxFileSize" min="1" max="1000" placeholder="10">
+            <select id="fileSizeUnit" style="margin-left: 5px;">
+                <option value="KB">KB</option>
+                <option value="MB" selected>MB</option>
+            </select>
+            <small class="help-text">${this._getMessage('fileFilter.maxSizeDesc')}</small>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="excludeBinaryFiles"> 
+                ${this._getMessage('fileFilter.excludeBinary')}
+            </label>
+            <small class="help-text">${this._getMessage('fileFilter.excludeBinaryDesc')}</small>
+        </div>
+
+        <div class="form-group">
+            <label for="binaryExtensions">${this._getMessage('fileFilter.binaryExtensions')}</label>
+            <input type="text" id="binaryExtensions" placeholder=".exe,.dll,.so,.dylib">
+            <small class="help-text">${this._getMessage('fileFilter.binaryExtensionsDesc')}</small>
+        </div>
+
+        <!-- Export Settings Section -->
+        <div class="section-title">${this._getMessage('section.exportSettings')}</div>
+        
+        <div class="form-group">
+            <label for="exportDirectory">${this._getMessage('export.directory')}</label>
+            <input type="text" id="exportDirectory" placeholder="${this._getMessage('export.directoryPlaceholder')}">
+            <small class="help-text">${this._getMessage('export.directoryDesc')}</small>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="includeMetadata"> 
+                ${this._getMessage('export.includeMetadata')}
+            </label>
+            <small class="help-text">${this._getMessage('export.includeMetadataDesc')}</small>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="autoTimestamp"> 
+                ${this._getMessage('export.autoTimestamp')}
+            </label>
+            <small class="help-text">${this._getMessage('export.autoTimestampDesc')}</small>
+        </div>
+
         <div class="buttons">
             <button onclick="saveSettings()">${this._getMessage('button.save')}</button>
         </div>
@@ -1268,7 +1414,15 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 awsRegion: document.getElementById('awsRegion').value,
                 modelName: document.getElementById('modelName').value,
                 vscodeLmVendor: 'copilot',  // Fixed to copilot
-                vscodeLmFamily: document.getElementById('vscodeLmFamily').value
+                vscodeLmFamily: document.getElementById('vscodeLmFamily').value,
+                // New settings
+                maxFileSize: parseInt(document.getElementById('maxFileSize').value) || 10,
+                fileSizeUnit: document.getElementById('fileSizeUnit').value,
+                excludeBinaryFiles: document.getElementById('excludeBinaryFiles').checked,
+                binaryExtensions: document.getElementById('binaryExtensions').value,
+                exportDirectory: document.getElementById('exportDirectory').value,
+                includeMetadata: document.getElementById('includeMetadata').checked,
+                autoTimestamp: document.getElementById('autoTimestamp').checked
             };
 
             // Debug log in webview
@@ -1485,6 +1639,15 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 interfaceLanguageSelect.value = settings.interfaceLanguage;
             }
             
+            // Load new settings
+            document.getElementById('maxFileSize').value = settings.maxFileSize || 10;
+            document.getElementById('fileSizeUnit').value = settings.fileSizeUnit || 'MB';
+            document.getElementById('excludeBinaryFiles').checked = settings.excludeBinaryFiles !== undefined ? settings.excludeBinaryFiles : true;
+            document.getElementById('binaryExtensions').value = settings.binaryExtensions || '.exe,.dll,.so,.dylib,.bin,.class,.jar,.war,.ear,.app,.dmg,.pkg,.msi,.deb,.rpm,.snap,.flatpak,.appimage';
+            document.getElementById('exportDirectory').value = settings.exportDirectory || '';
+            document.getElementById('includeMetadata').checked = settings.includeMetadata !== undefined ? settings.includeMetadata : true;
+            document.getElementById('autoTimestamp').checked = settings.autoTimestamp !== undefined ? settings.autoTimestamp : true;
+            
             // Update provider-specific UI visibility
             toggleProviderSettings();
             
@@ -1545,6 +1708,19 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                     });
                 }
             }
+        }
+
+        // New functions for favorite prompts and file filtering
+        function saveFavoritePrompt() {
+            vscode.postMessage({
+                command: 'saveFavoritePrompt'
+            });
+        }
+
+        function manageFavoritePrompts() {
+            vscode.postMessage({
+                command: 'manageFavoritePrompts'
+            });
         }
 
         // Function to load VS Code LM families from the extension

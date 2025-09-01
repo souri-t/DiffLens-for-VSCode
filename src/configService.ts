@@ -19,7 +19,22 @@ export function getConfiguration(): ReviewConfig {
 		modelName: config.get('modelName', 'anthropic.claude-3-sonnet-20240229-v1:0'),
 		vscodeLmVendor: config.get('vscodeLmVendor', 'copilot'),
 		vscodeLmFamily: config.get('vscodeLmFamily', 'gpt-4o'),
-		fileExtensions: config.get('fileExtensions', '')
+		fileExtensions: config.get('fileExtensions', ''),
+		maxFileSize: config.get('maxFileSize', 1048576),
+		fileSizeUnit: config.get<'KB' | 'MB'>('fileSizeUnit', 'MB'),
+		showExcludedFiles: config.get('showExcludedFiles', true),
+		excludedFileLimit: config.get('excludedFileLimit', 100),
+		excludeBinaryFiles: config.get('excludeBinaryFiles', true),
+		binaryFileExtensions: config.get('binaryFileExtensions', '.jpg,.jpeg,.png,.gif,.bmp,.tiff,.tif,.svg,.webp,.ico,.raw,.mp4,.avi,.mov,.wmv,.flv,.webm,.mkv,.m4v,.3gp,.mp3,.wav,.flac,.aac,.ogg,.wma,.m4a,.zip,.rar,.7z,.tar,.gz,.bz2,.xz,.exe,.dll,.so,.dylib,.app,.deb,.rpm,.ttf,.otf,.woff,.woff2,.eot,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.db,.sqlite,.mdb'),
+		textFileExtensions: config.get('textFileExtensions', '.svg,.xml,.json,.md,.txt'),
+		binaryDetectionMethod: config.get<'extension' | 'content' | 'both'>('binaryDetectionMethod', 'extension'),
+		binaryContentThreshold: config.get('binaryContentThreshold', 0.1),
+		defaultExportFormat: config.get<'html' | 'json' | 'pdf'>('defaultExportFormat', 'html'),
+		exportDirectory: config.get('exportDirectory', './reviews'),
+		exportFilenamePattern: config.get('exportFilenamePattern', 'review-{repository}-{branch}-{timestamp}'),
+		exportTemplate: config.get<'standard' | 'minimal' | 'detailed' | 'corporate'>('exportTemplate', 'standard'),
+		includeGitInfo: config.get('includeGitInfo', true),
+		includeStatistics: config.get('includeStatistics', true)
 	};
 	
 	// Debug log to check configuration values

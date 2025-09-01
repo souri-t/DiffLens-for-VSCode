@@ -133,12 +133,18 @@ export async function reviewWithLLM(diff: string, config: ReviewConfig): Promise
 }
 
 // Show review results in a new document
-export async function showReviewResults(reviewResult: ReviewResult): Promise<void> {
+export async function showReviewResults(reviewResult: ReviewResult, gitInfo?: any, exclusionSummary?: any): Promise<void> {
 	const timestamp = new Date().toLocaleString();
+	
+	let exclusionInfo = '';
+	if (exclusionSummary && exclusionSummary.summary.totalFiles > 0) {
+		exclusionInfo = `\n\n**Excluded Files:** ${exclusionSummary.summary.totalFiles} files (${exclusionSummary.summary.readableTotalSize}) were excluded from review`;
+	}
+
 	const content = `# Code Review Results
 
 **Model Used:** ${reviewResult.modelName}  
-**Generated at:** ${timestamp}
+**Generated at:** ${timestamp}${exclusionInfo}
 
 ---
 
@@ -149,4 +155,16 @@ ${reviewResult.review}`;
 		language: 'markdown'
 	});
 	await vscode.window.showTextDocument(doc);
+
+	// Show export options
+	const exportOption = await vscode.window.showInformationMessage(
+		'コードレビューが完了しました。結果をエクスポートしますか？',
+		'HTML', 'JSON', '除外ファイル確認', 'いいえ'
+	);
+
+	if (exportOption === 'HTML' || exportOption === 'JSON') {
+		vscode.commands.executeCommand('diff-lens.exportReview', reviewResult, gitInfo);
+	} else if (exportOption === '除外ファイル確認' && exclusionSummary) {
+		vscode.commands.executeCommand('diff-lens.showExcludedFiles', exclusionSummary);
+	}
 }
