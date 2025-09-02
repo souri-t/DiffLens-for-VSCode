@@ -422,22 +422,10 @@ const MESSAGES: Messages = {
         ja: 'バイナリとして扱うファイル拡張子のカンマ区切りリスト'
     },
     
-    // Export Settings Section
-    'section.exportSettings': {
-        en: '📤 Export Settings',
-        ja: '📤 エクスポート設定'
-    },
-    'export.directory': {
-        en: 'Export Directory:',
-        ja: 'エクスポートディレクトリ:'
-    },
-    'export.directoryPlaceholder': {
-        en: 'Leave empty to use workspace folder',
-        ja: 'ワークスペースフォルダを使用する場合は空欄にしてください'
-    },
-    'export.directoryDesc': {
-        en: 'Directory where exported review files will be saved',
-        ja: 'エクスポートされたレビューファイルが保存されるディレクトリ'
+    // Export Options Section
+    'section.exportOptions': {
+        en: '📤 Export Options',
+        ja: '📤 エクスポートオプション'
     },
     'export.includeMetadata': {
         en: 'Include Metadata',
@@ -454,6 +442,14 @@ const MESSAGES: Messages = {
     'export.autoTimestampDesc': {
         en: 'Automatically add timestamp to exported file names',
         ja: 'エクスポートファイル名に自動的にタイムスタンプを追加'
+    },
+    'export.htmlButton': {
+        en: 'Export as HTML',
+        ja: 'HTMLでエクスポート'
+    },
+    'export.jsonButton': {
+        en: 'Export as JSON',
+        ja: 'JSONでエクスポート'
     }
 };
 
@@ -524,6 +520,10 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                     case 'loadVSCodeFamilies':
                         console.log('Processing loadVSCodeFamilies message');
                         this._loadVSCodeFamilies();
+                        return;
+                    case 'exportReview':
+                        console.log('Processing exportReview message');
+                        this._exportReview(message.format, message.options);
                         return;
                     default:
                         console.log('Unknown message command:', message.command);
@@ -1311,31 +1311,6 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             </div>
         </div>
 
-        <!-- Export Settings Section -->
-        <div class="section-title">${this._getMessage('section.exportSettings')}</div>
-        
-        <div class="form-group">
-            <label for="exportDirectory">${this._getMessage('export.directory')}</label>
-            <input type="text" id="exportDirectory" placeholder="${this._getMessage('export.directoryPlaceholder')}">
-            <small class="help-text">${this._getMessage('export.directoryDesc')}</small>
-        </div>
-
-        <div class="form-group">
-            <label>
-                <input type="checkbox" id="includeMetadata"> 
-                ${this._getMessage('export.includeMetadata')}
-            </label>
-            <small class="help-text">${this._getMessage('export.includeMetadataDesc')}</small>
-        </div>
-
-        <div class="form-group">
-            <label>
-                <input type="checkbox" id="autoTimestamp"> 
-                ${this._getMessage('export.autoTimestamp')}
-            </label>
-            <small class="help-text">${this._getMessage('export.autoTimestampDesc')}</small>
-        </div>
-
         <div class="buttons">
             <button onclick="saveSettings()">${this._getMessage('button.save')}</button>
         </div>
@@ -1390,6 +1365,41 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         </div>
     </div>
 
+    <div class="section" style="display: ${this._settingsVisible ? 'none' : 'block'};">
+        <div class="section-title">${this._getMessage('section.exportOptions')}</div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="includeMetadata"> 
+                ${this._getMessage('export.includeMetadata')}
+            </label>
+            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                ${this._getMessage('export.includeMetadataDesc')}
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="autoTimestamp"> 
+                ${this._getMessage('export.autoTimestamp')}
+            </label>
+            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                ${this._getMessage('export.autoTimestampDesc')}
+            </small>
+        </div>
+
+        <div class="buttons">
+            <button onclick="exportReviewHTML()">
+                <span class="codicon codicon-file-code"></span>
+                ${this._getMessage('export.htmlButton')}
+            </button>
+            <button onclick="exportReviewJSON()" style="margin-left: 10px;">
+                <span class="codicon codicon-file-text"></span>
+                ${this._getMessage('export.jsonButton')}
+            </button>
+        </div>
+    </div>
+
     <script>
         const vscode = acquireVsCodeApi();
 
@@ -1422,7 +1432,6 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 fileSizeUnit: 'MB', // Fixed to MB
                 excludeBinaryFiles: document.getElementById('excludeBinaryFiles').checked,
                 binaryExtensions: document.getElementById('binaryExtensions').value,
-                exportDirectory: document.getElementById('exportDirectory').value,
                 includeMetadata: document.getElementById('includeMetadata').checked,
                 autoTimestamp: document.getElementById('autoTimestamp').checked
             };
@@ -1497,6 +1506,35 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 command: 'runCodeReview',
                 selectedCommit: selectedCommit || null,
                 prompts: prompts
+            });
+        }
+
+        // Export functions
+        function exportReviewHTML() {
+            const includeMetadata = document.getElementById('includeMetadata').checked;
+            const autoTimestamp = document.getElementById('autoTimestamp').checked;
+            
+            vscode.postMessage({
+                command: 'exportReview',
+                format: 'html',
+                options: {
+                    includeMetadata: includeMetadata,
+                    autoTimestamp: autoTimestamp
+                }
+            });
+        }
+
+        function exportReviewJSON() {
+            const includeMetadata = document.getElementById('includeMetadata').checked;
+            const autoTimestamp = document.getElementById('autoTimestamp').checked;
+            
+            vscode.postMessage({
+                command: 'exportReview',
+                format: 'json',
+                options: {
+                    includeMetadata: includeMetadata,
+                    autoTimestamp: autoTimestamp
+                }
             });
         }
 
@@ -1646,7 +1684,7 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             // fileSizeUnit is now fixed to MB, no need to load from settings
             document.getElementById('excludeBinaryFiles').checked = settings.excludeBinaryFiles !== undefined ? settings.excludeBinaryFiles : true;
             document.getElementById('binaryExtensions').value = settings.binaryExtensions || '.exe,.dll,.so,.dylib,.bin,.class,.jar,.war,.ear,.app,.dmg,.pkg,.msi,.deb,.rpm,.snap,.flatpak,.appimage';
-            document.getElementById('exportDirectory').value = settings.exportDirectory || '';
+            // exportDirectory removed - using file save dialog instead
             document.getElementById('includeMetadata').checked = settings.includeMetadata !== undefined ? settings.includeMetadata : true;
             document.getElementById('autoTimestamp').checked = settings.autoTimestamp !== undefined ? settings.autoTimestamp : true;
             
@@ -1789,6 +1827,66 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 command: 'vsCodeFamiliesLoaded',
                 error: error
             });
+        }
+    }
+
+    private async _exportReview(format: string, options: any) {
+        try {
+            // Import necessary modules
+            const { ExportService } = await import('./exportService');
+            const { getConfiguration } = await import('./configService');
+            const { reviewService } = await import('./reviewService');
+            
+            const config = getConfiguration();
+            const exportService = new ExportService(config);
+            
+            // Get the latest review result from reviewService
+            const reviewResult = reviewService.getLastReviewResult();
+            const gitInfo = reviewService.getLastGitInfo();
+            
+            if (!reviewResult) {
+                vscode.window.showWarningMessage('エクスポートするレビュー結果がありません。まずコードレビューを実行してください。');
+                return;
+            }
+
+            // Show save dialog
+            const defaultFileName = `code-review${options.autoTimestamp ? `-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}` : ''}`;
+            const saveUri = await vscode.window.showSaveDialog({
+                defaultUri: vscode.Uri.file(`${defaultFileName}.${format}`),
+                filters: format === 'html' ? {
+                    'HTML Files': ['html']
+                } : {
+                    'JSON Files': ['json']
+                }
+            });
+
+            if (!saveUri) {
+                return; // User cancelled
+            }
+
+            // Export with the selected file path
+            let result;
+            if (format === 'html') {
+                result = await exportService.exportToHtml(reviewResult, gitInfo, options, {}, saveUri.fsPath);
+            } else {
+                result = await exportService.exportToJson(reviewResult, gitInfo, options, {}, saveUri.fsPath);
+            }
+
+            if (result.success) {
+                const openFile = await vscode.window.showInformationMessage(
+                    result.message,
+                    'ファイルを開く'
+                );
+                if (openFile === 'ファイルを開く' && result.filePath) {
+                    const doc = await vscode.workspace.openTextDocument(result.filePath);
+                    await vscode.window.showTextDocument(doc);
+                }
+            } else {
+                vscode.window.showErrorMessage(result.message);
+            }
+        } catch (error) {
+            console.error('Export failed:', error);
+            vscode.window.showErrorMessage(`エクスポートに失敗しました: ${error}`);
         }
     }
 

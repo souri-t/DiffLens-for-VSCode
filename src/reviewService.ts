@@ -167,4 +167,29 @@ ${reviewResult.review}`;
 	} else if (exportOption === '除外ファイル確認' && exclusionSummary) {
 		vscode.commands.executeCommand('diff-lens.showExcludedFiles', exclusionSummary);
 	}
+
+	// Store the results for export functionality
+	reviewService.setLastReviewResult(reviewResult, gitInfo);
 }
+
+// Review service singleton to store last review results
+class ReviewService {
+	private lastReviewResult: ReviewResult | null = null;
+	private lastGitInfo: any = null;
+
+	setLastReviewResult(reviewResult: ReviewResult, gitInfo: any): void {
+		this.lastReviewResult = reviewResult;
+		this.lastGitInfo = gitInfo;
+	}
+
+	getLastReviewResult(): ReviewResult | null {
+		return this.lastReviewResult;
+	}
+
+	getLastGitInfo(): any {
+		return this.lastGitInfo;
+	}
+}
+
+// Export singleton instance
+export const reviewService = new ReviewService();

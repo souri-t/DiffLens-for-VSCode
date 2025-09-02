@@ -15,14 +15,24 @@ export class ExportService {
         reviewResult: ReviewResult,
         gitInfo: any,
         diffConfig: any,
-        statistics: any
+        statistics: any,
+        customFilePath?: string
     ): Promise<{ success: boolean; message: string; filePath?: string }> {
         try {
             const exportData = this.buildExportData(reviewResult, gitInfo, diffConfig, statistics, 'json');
             const json = JSON.stringify(exportData, null, 2);
             
-            const filename = this.generateFilename('json');
-            const filePath = await this.saveToFile(filename, json);
+            let filePath: string;
+            let filename: string;
+            
+            if (customFilePath) {
+                filePath = customFilePath;
+                filename = path.basename(customFilePath);
+                await this.saveToCustomFile(customFilePath, json);
+            } else {
+                filename = this.generateFilename('json');
+                filePath = await this.saveToFile(filename, json);
+            }
 
             await this.addToExportHistory('json', filename, filePath, json.length);
 
@@ -44,14 +54,24 @@ export class ExportService {
         reviewResult: ReviewResult,
         gitInfo: any,
         diffConfig: any,
-        statistics: any
+        statistics: any,
+        customFilePath?: string
     ): Promise<{ success: boolean; message: string; filePath?: string }> {
         try {
             const exportData = this.buildExportData(reviewResult, gitInfo, diffConfig, statistics, 'html');
             const html = this.generateHtmlReport(exportData);
             
-            const filename = this.generateFilename('html');
-            const filePath = await this.saveToFile(filename, html);
+            let filePath: string;
+            let filename: string;
+            
+            if (customFilePath) {
+                filePath = customFilePath;
+                filename = path.basename(customFilePath);
+                await this.saveToCustomFile(customFilePath, html);
+            } else {
+                filename = this.generateFilename('html');
+                filePath = await this.saveToFile(filename, html);
+            }
 
             await this.addToExportHistory('html', filename, filePath, html.length);
 
@@ -411,6 +431,12 @@ export class ExportService {
         await vscode.workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'));
         
         return filePath;
+    }
+
+    // Save content to a custom file path
+    private async saveToCustomFile(filePath: string, content: string): Promise<void> {
+        const fileUri = vscode.Uri.file(filePath);
+        await vscode.workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'));
     }
 
     // Add export to history
