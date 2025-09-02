@@ -1144,6 +1144,35 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             </small>
         </div>
 
+        <!-- File Filtering Section -->
+        <div class="section-title">${this._getMessage('section.fileFiltering')}</div>
+        
+        <div class="form-group">
+            <label for="maxFileSize">${this._getMessage('fileFilter.maxSize')}</label>
+            <input type="number" id="maxFileSize" min="1" max="1000" placeholder="10"> MB
+            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                ${this._getMessage('fileFilter.maxSizeDesc')}
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="excludeBinaryFiles"> 
+                ${this._getMessage('fileFilter.excludeBinary')}
+            </label>
+            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                ${this._getMessage('fileFilter.excludeBinaryDesc')}
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="binaryExtensions">${this._getMessage('fileFilter.binaryExtensions')}</label>
+            <input type="text" id="binaryExtensions" placeholder=".exe,.dll,.so,.dylib">
+            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                ${this._getMessage('fileFilter.binaryExtensionsDesc')}
+            </small>
+        </div>
+
         <!-- Default Prompt Settings Section -->
         <div class="section-title">${this._getMessage('section.reviewSettings')}</div>
         
@@ -1282,33 +1311,6 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             </div>
         </div>
 
-        <!-- File Filtering Section -->
-        <div class="section-title">${this._getMessage('section.fileFiltering')}</div>
-        
-        <div class="form-group">
-            <label for="maxFileSize">${this._getMessage('fileFilter.maxSize')}</label>
-            <input type="number" id="maxFileSize" min="1" max="1000" placeholder="10">
-            <select id="fileSizeUnit" style="margin-left: 5px;">
-                <option value="KB">KB</option>
-                <option value="MB" selected>MB</option>
-            </select>
-            <small class="help-text">${this._getMessage('fileFilter.maxSizeDesc')}</small>
-        </div>
-
-        <div class="form-group">
-            <label>
-                <input type="checkbox" id="excludeBinaryFiles"> 
-                ${this._getMessage('fileFilter.excludeBinary')}
-            </label>
-            <small class="help-text">${this._getMessage('fileFilter.excludeBinaryDesc')}</small>
-        </div>
-
-        <div class="form-group">
-            <label for="binaryExtensions">${this._getMessage('fileFilter.binaryExtensions')}</label>
-            <input type="text" id="binaryExtensions" placeholder=".exe,.dll,.so,.dylib">
-            <small class="help-text">${this._getMessage('fileFilter.binaryExtensionsDesc')}</small>
-        </div>
-
         <!-- Export Settings Section -->
         <div class="section-title">${this._getMessage('section.exportSettings')}</div>
         
@@ -1417,7 +1419,7 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 vscodeLmFamily: document.getElementById('vscodeLmFamily').value,
                 // New settings
                 maxFileSize: parseInt(document.getElementById('maxFileSize').value) || 10,
-                fileSizeUnit: document.getElementById('fileSizeUnit').value,
+                fileSizeUnit: 'MB', // Fixed to MB
                 excludeBinaryFiles: document.getElementById('excludeBinaryFiles').checked,
                 binaryExtensions: document.getElementById('binaryExtensions').value,
                 exportDirectory: document.getElementById('exportDirectory').value,
@@ -1641,7 +1643,7 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             
             // Load new settings
             document.getElementById('maxFileSize').value = settings.maxFileSize || 10;
-            document.getElementById('fileSizeUnit').value = settings.fileSizeUnit || 'MB';
+            // fileSizeUnit is now fixed to MB, no need to load from settings
             document.getElementById('excludeBinaryFiles').checked = settings.excludeBinaryFiles !== undefined ? settings.excludeBinaryFiles : true;
             document.getElementById('binaryExtensions').value = settings.binaryExtensions || '.exe,.dll,.so,.dylib,.bin,.class,.jar,.war,.ear,.app,.dmg,.pkg,.msi,.deb,.rpm,.snap,.flatpak,.appimage';
             document.getElementById('exportDirectory').value = settings.exportDirectory || '';
