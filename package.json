@@ -55,12 +55,7 @@
         "category": "DiffLens",
         "icon": "$(heart)"
       },
-      {
-        "command": "diff-lens.manageFavoritePrompts",
-        "title": "Manage Favorite Prompts",
-        "category": "DiffLens",
-        "icon": "$(star)"
-      },
+
       {
         "command": "diff-lens.exportReview",
         "title": "Export Review Results",

@@ -134,6 +134,9 @@ export async function reviewWithLLM(diff: string, config: ReviewConfig): Promise
 
 // Show review results in a new document
 export async function showReviewResults(reviewResult: ReviewResult, gitInfo?: any, exclusionSummary?: any): Promise<void> {
+	// Store the results for export functionality FIRST
+	reviewService.setLastReviewResult(reviewResult, gitInfo);
+
 	const timestamp = new Date().toLocaleString();
 	
 	let exclusionInfo = '';
@@ -167,9 +170,6 @@ ${reviewResult.review}`;
 	} else if (exportOption === '除外ファイル確認' && exclusionSummary) {
 		vscode.commands.executeCommand('diff-lens.showExcludedFiles', exclusionSummary);
 	}
-
-	// Store the results for export functionality
-	reviewService.setLastReviewResult(reviewResult, gitInfo);
 }
 
 // Review service singleton to store last review results

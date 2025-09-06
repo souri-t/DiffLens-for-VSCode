@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { FavoritePromptsService } from './favoritePromptsService';
 
 // VS Code Git API types (duplicate from extension.ts for self-contained provider)
 interface GitAPI {
@@ -168,37 +169,41 @@ interface Messages {
 
 const MESSAGES: Messages = {
     // Section titles
+    'section.settingsTitle': {
+        en: 'DiffLens Settings',
+        ja: 'DiffLens 設定'
+    },
     'section.language': {
-        en: '🌐 Language Settings',
-        ja: '🌐 言語設定'
+        en: 'Language Settings',
+        ja: '言語設定'
     },
     'section.gitInfo': {
-        en: '🔍 Git Repository Information',
-        ja: '🔍 Gitリポジトリ情報'
+        en: 'Git Repository Information',
+        ja: 'Gitリポジトリ情報'
     },
     'section.diffSettings': {
-        en: '📊 Diff Settings',
-        ja: '📊 差分設定'
+        en: 'Diff Settings',
+        ja: '差分設定'
     },
     'section.reviewSettings': {
-        en: '⚙️ Default Prompt Settings',
-        ja: '⚙️ デフォルトプロンプト設定'
+        en: 'Default Prompt Settings',
+        ja: 'デフォルトプロンプト設定'
     },
     'section.promptInfo': {
-        en: '📝 Prompt Information',
-        ja: '📝 プロンプト情報'
+        en: 'Prompt Information',
+        ja: 'プロンプト情報'
     },
     'section.awsConfig': {
-        en: '🔐 AWS Bedrock Configuration',
-        ja: '🔐 AWS Bedrock設定'
+        en: 'AWS Bedrock Configuration',
+        ja: 'AWS Bedrock設定'
     },
     'section.llmProvider': {
-        en: '🤖 LLM Provider',
-        ja: '🤖 LLMプロバイダー'
+        en: 'LLM Provider',
+        ja: 'LLMプロバイダー'
     },
     'section.vscodeLmConfig': {
-        en: '🔗 VS Code LM Configuration',
-        ja: '🔗 VS Code LM設定'
+        en: 'VS Code LM Configuration',
+        ja: 'VS Code LM設定'
     },
     // Git info labels
     'git.currentBranch': {
@@ -380,26 +385,78 @@ const MESSAGES: Messages = {
     
     // Favorite Prompts Section
     'section.favoritePrompts': {
-        en: '⭐ Favorite Prompts',
-        ja: '⭐ お気に入りプロンプト'
+        en: 'Favorite Prompts',
+        ja: 'お気に入りプロンプト'
+    },
+    'favoritePrompts.select': {
+        en: 'Select Favorite Prompt:',
+        ja: 'お気に入りプロンプトを選択:'
+    },
+    'favoritePrompts.selectOption': {
+        en: 'Select a saved prompt...',
+        ja: '保存されたプロンプトを選択...'
+    },
+    'favoritePrompts.title': {
+        en: 'Prompt Title:',
+        ja: 'プロンプトタイトル:'
+    },
+    'favoritePrompts.titlePlaceholder': {
+        en: 'Enter title for this prompt',
+        ja: 'このプロンプトのタイトルを入力'
     },
     'favoritePrompts.save': {
         en: 'Save Current Prompts',
         ja: '現在のプロンプトを保存'
     },
+    'favoritePrompts.delete': {
+        en: 'Delete',
+        ja: '削除'
+    },
     'favoritePrompts.manage': {
         en: 'Manage Favorites',
         ja: 'お気に入り管理'
     },
+    'favoritePrompts.saveSuccess': {
+        en: 'Prompt saved successfully!',
+        ja: 'プロンプトが正常に保存されました！'
+    },
+    'favoritePrompts.saveError': {
+        en: 'Failed to save prompt',
+        ja: 'プロンプトの保存に失敗しました'
+    },
+    'favoritePrompts.deleteSuccess': {
+        en: 'Prompt deleted successfully!',
+        ja: 'プロンプトが正常に削除されました！'
+    },
+    'favoritePrompts.deleteError': {
+        en: 'Failed to delete prompt',
+        ja: 'プロンプトの削除に失敗しました'
+    },
+    'favoritePrompts.confirmDelete': {
+        en: 'Are you sure you want to delete this prompt?',
+        ja: 'このプロンプトを削除してもよろしいですか？'
+    },
+    'favoritePrompts.error.titleRequired': {
+        en: 'Please enter a title for the prompt.',
+        ja: 'プロンプトのタイトルを入力してください。'
+    },
+    'favoritePrompts.error.promptsRequired': {
+        en: 'Please enter both system prompt and review perspective.',
+        ja: 'システムプロンプトとレビュー観点の両方を入力してください。'
+    },
+    'favoritePrompts.error.selectToDelete': {
+        en: 'Please select a prompt to delete.',
+        ja: '削除するプロンプトを選択してください。'
+    },
     
     // File Filtering Section
     'section.fileFiltering': {
-        en: '🔍 File Filtering',
-        ja: '🔍 ファイルフィルタリング'
+        en: 'File Filtering',
+        ja: 'ファイルフィルタリング'
     },
     'fileFilter.maxSize': {
-        en: 'Maximum File Size:',
-        ja: '最大ファイルサイズ:'
+        en: 'Maximum File Size (MB):',
+        ja: '最大ファイルサイズ（MB）:'
     },
     'fileFilter.maxSizeDesc': {
         en: 'Files larger than this size will be excluded from review',
@@ -424,8 +481,8 @@ const MESSAGES: Messages = {
     
     // Export Options Section
     'section.exportOptions': {
-        en: '📤 Export Options',
-        ja: '📤 エクスポートオプション'
+        en: 'Export Options',
+        ja: 'エクスポートオプション'
     },
     'export.includeMetadata': {
         en: 'Include Metadata',
@@ -520,6 +577,22 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                     case 'loadVSCodeFamilies':
                         console.log('Processing loadVSCodeFamilies message');
                         this._loadVSCodeFamilies();
+                        return;
+                    case 'saveFavoritePrompt':
+                        console.log('Processing saveFavoritePrompt message');
+                        this._saveFavoritePrompt(message.data);
+                        return;
+                    case 'loadFavoritePrompts':
+                        console.log('Processing loadFavoritePrompts message');
+                        this._loadFavoritePrompts();
+                        return;
+                    case 'loadFavoritePrompt':
+                        console.log('Processing loadFavoritePrompt message');
+                        this._loadFavoritePrompt(message.promptId);
+                        return;
+                    case 'deleteFavoritePrompt':
+                        console.log('Processing deleteFavoritePrompt message');
+                        this._deleteFavoritePrompt(message.promptId);
                         return;
                     case 'exportReview':
                         console.log('Processing exportReview message');
@@ -664,8 +737,6 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         const config = vscode.workspace.getConfiguration('diffLens');
         
         const settings = {
-            systemPrompt: config.get('systemPrompt', ''),
-            reviewPerspective: config.get('reviewPerspective', ''),
             contextLines: config.get('contextLines', 50),
             excludeDeletes: config.get('excludeDeletes', true),
             fileExtensions: config.get('fileExtensions', ''),
@@ -680,8 +751,6 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         };
 
         console.log('Loading settings from VS Code configuration:', {
-            systemPrompt: settings.systemPrompt ? '***SET***' : 'EMPTY',
-            reviewPerspective: settings.reviewPerspective ? '***SET***' : 'EMPTY',
             contextLines: settings.contextLines,
             excludeDeletes: settings.excludeDeletes,
             fileExtensions: settings.fileExtensions,
@@ -1101,218 +1170,326 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         .buttons {
             margin-top: 15px;
         }
+        
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+        
+        .settings-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            margin: 0;
+        }
+        
+        .header-button {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .header-button:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+        
+        .header-button:active {
+            background: var(--vscode-button-activeBackground);
+        }
+        
+        .settings-panel {
+            margin-bottom: 15px;
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--vscode-editor-background);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .panel-header:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+        
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .panel-icon {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+        
+        .panel-toggle {
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+            transition: transform 0.2s ease;
+        }
+        
+        .panel-toggle.expanded {
+            transform: rotate(90deg);
+        }
+        
+        .panel-content {
+            padding: 16px;
+            background: var(--vscode-sideBar-background);
+            display: none;
+        }
+        
+        .panel-content.expanded {
+            display: block;
+        }
+        
+        .panel-content .section-title {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <!-- Language Settings Section (最上部に追加) -->
+    <!-- Settings Section with Panels -->
     <div class="section" id="settingsSection" style="display: ${this._settingsVisible ? 'block' : 'none'};">
-        <div class="section-title">${this._getMessage('section.language')}</div>
-        <div class="form-group">
-            <label for="interfaceLanguage">${this._getMessage('language.label')}</label>
-            <select id="interfaceLanguage" onchange="changeLanguage()">
-                <option value="en" ${this._currentLanguage === 'en' ? 'selected' : ''}>${this._getMessage('language.english')}</option>
-                <option value="ja" ${this._currentLanguage === 'ja' ? 'selected' : ''}>${this._getMessage('language.japanese')}</option>
-            </select>
+        <!-- Settings Header with Title and Save Button -->
+        <div class="settings-header">
+            <h2 class="settings-title">${this._getMessage('section.settingsTitle')}</h2>
+            <button class="header-button" onclick="saveSettings()">${this._getMessage('button.save')}</button>
         </div>
         
-        <!-- Diff Settings Section -->
-        <div class="section-title">${this._getMessage('section.diffSettings')}</div>
-        
-        <div class="form-group">
-            <label for="contextLines">${this._getMessage('diff.contextLines')}</label>
-            <input type="number" id="contextLines" min="0" max="100" placeholder="50">
-            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
-                ${this._getMessage('diff.contextLinesDesc')}
-            </small>
-        </div>
-        
-        <div class="form-group">
-            <label>
-                <input type="checkbox" id="excludeDeletes" checked>
-                ${this._getMessage('diff.excludeDeletes')}
-            </label>
-            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
-                ${this._getMessage('diff.excludeDeletesDesc')}
-            </small>
-        </div>
-        
-        <div class="form-group">
-            <label for="fileExtensions">${this._getMessage('diff.fileExtensions')}</label>
-            <input type="text" id="fileExtensions" placeholder="${this._getMessage('diff.fileExtensionsPlaceholder')}">
-            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
-                ${this._getMessage('diff.fileExtensionsDesc')}
-            </small>
-        </div>
-
-        <!-- File Filtering Section -->
-        <div class="section-title">${this._getMessage('section.fileFiltering')}</div>
-        
-        <div class="form-group">
-            <label for="maxFileSize">${this._getMessage('fileFilter.maxSize')}</label>
-            <input type="number" id="maxFileSize" min="1" max="1000" placeholder="10"> MB
-            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
-                ${this._getMessage('fileFilter.maxSizeDesc')}
-            </small>
-        </div>
-
-        <div class="form-group">
-            <label>
-                <input type="checkbox" id="excludeBinaryFiles"> 
-                ${this._getMessage('fileFilter.excludeBinary')}
-            </label>
-            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
-                ${this._getMessage('fileFilter.excludeBinaryDesc')}
-            </small>
-        </div>
-
-        <div class="form-group">
-            <label for="binaryExtensions">${this._getMessage('fileFilter.binaryExtensions')}</label>
-            <input type="text" id="binaryExtensions" placeholder=".exe,.dll,.so,.dylib">
-            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
-                ${this._getMessage('fileFilter.binaryExtensionsDesc')}
-            </small>
-        </div>
-
-        <!-- Default Prompt Settings Section -->
-        <div class="section-title">${this._getMessage('section.reviewSettings')}</div>
-        
-        <div class="form-group">
-            <label for="defaultSystemPrompt">${this._getMessage('defaultReview.systemPrompt')}</label>
-            <textarea id="defaultSystemPrompt" placeholder="${this._getMessage('defaultReview.systemPromptPlaceholder')}"></textarea>
-        </div>
-        
-        <div class="form-group">
-            <label for="defaultReviewPerspective">${this._getMessage('defaultReview.perspective')}</label>
-            <textarea id="defaultReviewPerspective" placeholder="${this._getMessage('defaultReview.perspectivePlaceholder')}"></textarea>
-        </div>
-
-        <!-- LLM Provider Selection -->
-        <div class="section-title">${this._getMessage('section.llmProvider')}</div>
-        
-        <div class="form-group">
-            <label for="llmProvider">${this._getMessage('llm.provider')}</label>
-            <select id="llmProvider" onchange="toggleProviderSettings()">
-                <option value="bedrock">AWS Bedrock</option>
-                <option value="vscode-lm">VS Code Language Model API</option>
-            </select>
-            <small class="help-text">${this._getMessage('llm.providerDesc')}</small>
-        </div>
-
-        <!-- AWS Configuration Section -->
-        <div id="bedrockConfig" class="section-title">${this._getMessage('section.awsConfig')}</div>
-        
-        <div id="bedrockFields">
-            <div class="form-group">
-                <label for="awsAccessKey">${this._getMessage('aws.accessKey')}</label>
-                <input type="password" id="awsAccessKey" placeholder="${this._getMessage('aws.accessKeyPlaceholder')}">
+        <!-- Language Settings Panel -->
+        <div class="settings-panel">
+            <div class="panel-header" onclick="togglePanel('languagePanel')">
+                <h3 class="panel-title">
+                    <span class="panel-icon">🌐</span>
+                    ${this._getMessage('section.language')}
+                </h3>
+                <span class="panel-toggle" id="languagePanelToggle">▶</span>
             </div>
-            
-            <div class="form-group">
-                <label for="awsSecretKey">${this._getMessage('aws.secretKey')}</label>
-                <input type="password" id="awsSecretKey" placeholder="${this._getMessage('aws.secretKeyPlaceholder')}">
+            <div class="panel-content expanded" id="languagePanel">
+                <div class="form-group">
+                    <label for="interfaceLanguage">${this._getMessage('language.label')}</label>
+                    <select id="interfaceLanguage" onchange="changeLanguage()">
+                        <option value="en" ${this._currentLanguage === 'en' ? 'selected' : ''}>${this._getMessage('language.english')}</option>
+                        <option value="ja" ${this._currentLanguage === 'ja' ? 'selected' : ''}>${this._getMessage('language.japanese')}</option>
+                    </select>
+                </div>
             </div>
-            
-            <div class="form-group">
-                <label for="awsRegion">${this._getMessage('aws.region')}</label>
-                <select id="awsRegion">
-                <option value="us-east-1">US East (N. Virginia) - us-east-1</option>
-                <option value="us-west-2">US West (Oregon) - us-west-2</option>
-                <option value="us-west-1">US West (N. California) - us-west-1</option>
-                <option value="eu-west-1">Europe (Ireland) - eu-west-1</option>
-                <option value="eu-west-2">Europe (London) - eu-west-2</option>
-                <option value="eu-west-3">Europe (Paris) - eu-west-3</option>
-                <option value="eu-central-1">Europe (Frankfurt) - eu-central-1</option>
-                <option value="eu-north-1">Europe (Stockholm) - eu-north-1</option>
-                <option value="ap-northeast-1">Asia Pacific (Tokyo) - ap-northeast-1</option>
-                <option value="ap-northeast-2">Asia Pacific (Seoul) - ap-northeast-2</option>
-                <option value="ap-northeast-3">Asia Pacific (Osaka) - ap-northeast-3</option>
-                <option value="ap-southeast-1">Asia Pacific (Singapore) - ap-southeast-1</option>
-                <option value="ap-southeast-2">Asia Pacific (Sydney) - ap-southeast-2</option>
-                <option value="ap-south-1">Asia Pacific (Mumbai) - ap-south-1</option>
-                <option value="ca-central-1">Canada (Central) - ca-central-1</option>
-                <option value="sa-east-1">South America (São Paulo) - sa-east-1</option>
-            </select>
         </div>
-        
-        <div class="form-group">
-            <label for="modelName">${this._getMessage('aws.modelName')}</label>
-            <input type="text" id="modelName" list="modelNameOptions" placeholder="${this._getMessage('aws.modelNamePlaceholder')}">
-            <datalist id="modelNameOptions">
-                <!-- Claude Models (Latest) -->
-                <option value="anthropic.claude-3-5-sonnet-20241022-v2:0">Claude 3.5 Sonnet v2 (Latest)</option>
-                <option value="anthropic.claude-3-5-sonnet-20240620-v1:0">Claude 3.5 Sonnet</option>
-                <option value="anthropic.claude-3-sonnet-20240229-v1:0">Claude 3 Sonnet</option>
-                <option value="anthropic.claude-3-haiku-20240307-v1:0">Claude 3 Haiku</option>
-                <option value="anthropic.claude-3-opus-20240229-v1:0">Claude 3 Opus</option>
-                <option value="anthropic.claude-v2:1">Claude v2.1</option>
-                <option value="anthropic.claude-v2">Claude v2</option>
-                <option value="anthropic.claude-instant-v1">Claude Instant v1</option>
+
+        <!-- Diff Settings Panel -->
+        <div class="settings-panel">
+            <div class="panel-header" onclick="togglePanel('diffPanel')">
+                <h3 class="panel-title">
+                    <span class="panel-icon">📊</span>
+                    ${this._getMessage('section.diffSettings')}
+                </h3>
+                <span class="panel-toggle" id="diffPanelToggle">▶</span>
+            </div>
+            <div class="panel-content" id="diffPanel">
+                <div class="form-group">
+                    <label for="contextLines">${this._getMessage('diff.contextLines')}</label>
+                    <input type="number" id="contextLines" min="0" max="100" placeholder="50">
+                    <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                        ${this._getMessage('diff.contextLinesDesc')}
+                    </small>
+                </div>
                 
-                <!-- Amazon Titan Models -->
-                <option value="amazon.titan-text-premier-v1:0">Titan Text Premier</option>
-                <option value="amazon.titan-text-express-v1">Titan Text Express</option>
-                <option value="amazon.titan-text-lite-v1">Titan Text Lite</option>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="excludeDeletes" checked>
+                        ${this._getMessage('diff.excludeDeletes')}
+                    </label>
+                    <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                        ${this._getMessage('diff.excludeDeletesDesc')}
+                    </small>
+                </div>
                 
-                <!-- Meta Llama Models (Latest) -->
-                <option value="meta.llama3-2-90b-instruct-v1:0">Llama 3.2 90B Instruct</option>
-                <option value="meta.llama3-2-11b-instruct-v1:0">Llama 3.2 11B Instruct</option>
-                <option value="meta.llama3-1-70b-instruct-v1:0">Llama 3.1 70B Instruct</option>
-                <option value="meta.llama3-1-8b-instruct-v1:0">Llama 3.1 8B Instruct</option>
-                <option value="meta.llama3-70b-instruct-v1:0">Llama 3 70B Instruct</option>
-                <option value="meta.llama3-8b-instruct-v1:0">Llama 3 8B Instruct</option>
-                
-                <!-- Mistral Models -->
-                <option value="mistral.mistral-large-2407-v1:0">Mistral Large 2407</option>
-                <option value="mistral.mistral-large-2402-v1:0">Mistral Large 2402</option>
-                <option value="mistral.mistral-small-2402-v1:0">Mistral Small 2402</option>
-            </datalist>
-            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
-                ${this._getMessage('aws.modelNameDesc')}
-            </small>
-        </div>
-        </div>
-
-        <!-- VS Code LM Configuration Section -->
-        <div id="vscodeLmConfig" style="display: none;">
-            <div class="section-title">${this._getMessage('section.vscodeLmConfig')}</div>
-            
-            <div class="form-group">
-                <label for="vscodeLmFamily">${this._getMessage('vscode.family')}</label>
-                <select id="vscodeLmFamily">
-                    <option value="gpt-4o">GPT-4o</option>
-                    <option value="gpt-4">GPT-4</option>
-                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
-                    <option value="claude-3-haiku">Claude 3 Haiku</option>
-                    <option value="claude-3-opus">Claude 3 Opus</option>
-                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                </select>
-
-                <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
-                    ${this._getMessage('vscode.familyDesc')}
-                </small>
+                <div class="form-group">
+                    <label for="fileExtensions">${this._getMessage('diff.fileExtensions')}</label>
+                    <input type="text" id="fileExtensions" placeholder="${this._getMessage('diff.fileExtensionsPlaceholder')}">
+                    <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                        ${this._getMessage('diff.fileExtensionsDesc')}
+                    </small>
+                </div>
             </div>
         </div>
 
-        <!-- Favorite Prompts Section -->
-        <div class="section-title">${this._getMessage('section.favoritePrompts')}</div>
-        
-        <div class="form-group">
-            <div class="buttons" style="margin-bottom: 10px;">
-                <button onclick="saveFavoritePrompt()" style="margin-right: 10px;">
-                    <span class="codicon codicon-heart"></span>
-                    ${this._getMessage('favoritePrompts.save')}
-                </button>
-                <button onclick="manageFavoritePrompts()">
-                    <span class="codicon codicon-star"></span>
-                    ${this._getMessage('favoritePrompts.manage')}
-                </button>
+        <!-- File Filtering Panel -->
+        <div class="settings-panel">
+            <div class="panel-header" onclick="togglePanel('fileFilterPanel')">
+                <h3 class="panel-title">
+                    <span class="panel-icon">🗂️</span>
+                    ${this._getMessage('section.fileFiltering')}
+                </h3>
+                <span class="panel-toggle" id="fileFilterPanelToggle">▶</span>
+            </div>
+            <div class="panel-content" id="fileFilterPanel">
+                <div class="form-group">
+                    <label for="maxFileSize">${this._getMessage('fileFilter.maxSize')}</label>
+                    <input type="number" id="maxFileSize" min="1" max="1000" placeholder="10">
+                    <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                        ${this._getMessage('fileFilter.maxSizeDesc')}
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="excludeBinaryFiles"> 
+                        ${this._getMessage('fileFilter.excludeBinary')}
+                    </label>
+                    <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                        ${this._getMessage('fileFilter.excludeBinaryDesc')}
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="binaryExtensions">${this._getMessage('fileFilter.binaryExtensions')}</label>
+                    <input type="text" id="binaryExtensions" placeholder=".exe,.dll,.so,.dylib">
+                    <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                        ${this._getMessage('fileFilter.binaryExtensionsDesc')}
+                    </small>
+                </div>
             </div>
         </div>
 
-        <div class="buttons">
-            <button onclick="saveSettings()">${this._getMessage('button.save')}</button>
+        <!-- LLM Provider Panel -->
+        <div class="settings-panel">
+            <div class="panel-header" onclick="togglePanel('llmPanel')">
+                <h3 class="panel-title">
+                    <span class="panel-icon">🤖</span>
+                    ${this._getMessage('section.llmProvider')}
+                </h3>
+                <span class="panel-toggle" id="llmPanelToggle">▶</span>
+            </div>
+            <div class="panel-content" id="llmPanel">
+                <div class="form-group">
+                    <label for="llmProvider">${this._getMessage('llm.provider')}</label>
+                    <select id="llmProvider" onchange="toggleProviderSettings()">
+                        <option value="bedrock">AWS Bedrock</option>
+                        <option value="vscode-lm">VS Code Language Model API</option>
+                    </select>
+                    <small class="help-text">${this._getMessage('llm.providerDesc')}</small>
+                </div>
+
+                <!-- AWS Configuration Section -->
+                <div id="bedrockConfig" style="margin-top: 20px;">
+                    <div class="section-title">${this._getMessage('section.awsConfig')}</div>
+                    
+                    <div id="bedrockFields">
+                        <div class="form-group">
+                            <label for="awsAccessKey">${this._getMessage('aws.accessKey')}</label>
+                            <input type="password" id="awsAccessKey" placeholder="${this._getMessage('aws.accessKeyPlaceholder')}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="awsSecretKey">${this._getMessage('aws.secretKey')}</label>
+                            <input type="password" id="awsSecretKey" placeholder="${this._getMessage('aws.secretKeyPlaceholder')}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="awsRegion">${this._getMessage('aws.region')}</label>
+                            <select id="awsRegion">
+                            <option value="us-east-1">US East (N. Virginia) - us-east-1</option>
+                            <option value="us-west-2">US West (Oregon) - us-west-2</option>
+                            <option value="us-west-1">US West (N. California) - us-west-1</option>
+                            <option value="eu-west-1">Europe (Ireland) - eu-west-1</option>
+                            <option value="eu-west-2">Europe (London) - eu-west-2</option>
+                            <option value="eu-west-3">Europe (Paris) - eu-west-3</option>
+                            <option value="eu-central-1">Europe (Frankfurt) - eu-central-1</option>
+                            <option value="eu-north-1">Europe (Stockholm) - eu-north-1</option>
+                            <option value="ap-northeast-1">Asia Pacific (Tokyo) - ap-northeast-1</option>
+                            <option value="ap-northeast-2">Asia Pacific (Seoul) - ap-northeast-2</option>
+                            <option value="ap-northeast-3">Asia Pacific (Osaka) - ap-northeast-3</option>
+                            <option value="ap-southeast-1">Asia Pacific (Singapore) - ap-southeast-1</option>
+                            <option value="ap-southeast-2">Asia Pacific (Sydney) - ap-southeast-2</option>
+                            <option value="ap-south-1">Asia Pacific (Mumbai) - ap-south-1</option>
+                            <option value="ca-central-1">Canada (Central) - ca-central-1</option>
+                            <option value="sa-east-1">South America (São Paulo) - sa-east-1</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="modelName">${this._getMessage('aws.modelName')}</label>
+                        <input type="text" id="modelName" list="modelNameOptions" placeholder="${this._getMessage('aws.modelNamePlaceholder')}">
+                        <datalist id="modelNameOptions">
+                            <!-- Claude Models (Latest) -->
+                            <option value="anthropic.claude-3-5-sonnet-20241022-v2:0">Claude 3.5 Sonnet v2 (Latest)</option>
+                            <option value="anthropic.claude-3-5-sonnet-20240620-v1:0">Claude 3.5 Sonnet</option>
+                            <option value="anthropic.claude-3-sonnet-20240229-v1:0">Claude 3 Sonnet</option>
+                            <option value="anthropic.claude-3-haiku-20240307-v1:0">Claude 3 Haiku</option>
+                            <option value="anthropic.claude-3-opus-20240229-v1:0">Claude 3 Opus</option>
+                            <option value="anthropic.claude-v2:1">Claude v2.1</option>
+                            <option value="anthropic.claude-v2">Claude v2</option>
+                            <option value="anthropic.claude-instant-v1">Claude Instant v1</option>
+                            
+                            <!-- Amazon Titan Models -->
+                            <option value="amazon.titan-text-premier-v1:0">Titan Text Premier</option>
+                            <option value="amazon.titan-text-express-v1">Titan Text Express</option>
+                            <option value="amazon.titan-text-lite-v1">Titan Text Lite</option>
+                            
+                            <!-- Meta Llama Models (Latest) -->
+                            <option value="meta.llama3-2-90b-instruct-v1:0">Llama 3.2 90B Instruct</option>
+                            <option value="meta.llama3-2-11b-instruct-v1:0">Llama 3.2 11B Instruct</option>
+                            <option value="meta.llama3-1-70b-instruct-v1:0">Llama 3.1 70B Instruct</option>
+                            <option value="meta.llama3-1-8b-instruct-v1:0">Llama 3.1 8B Instruct</option>
+                            <option value="meta.llama3-70b-instruct-v1:0">Llama 3 70B Instruct</option>
+                            <option value="meta.llama3-8b-instruct-v1:0">Llama 3 8B Instruct</option>
+                            
+                            <!-- Mistral Models -->
+                            <option value="mistral.mistral-large-2407-v1:0">Mistral Large 2407</option>
+                            <option value="mistral.mistral-large-2402-v1:0">Mistral Large 2402</option>
+                            <option value="mistral.mistral-small-2402-v1:0">Mistral Small 2402</option>
+                        </datalist>
+                        <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                            ${this._getMessage('aws.modelNameDesc')}
+                        </small>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- VS Code LM Configuration Section -->
+                <div id="vscodeLmConfig" style="display: none; margin-top: 20px;">
+                    <div class="section-title">${this._getMessage('section.vscodeLmConfig')}</div>
+                    
+                    <div class="form-group">
+                        <label for="vscodeLmFamily">${this._getMessage('vscode.family')}</label>
+                        <select id="vscodeLmFamily">
+                            <option value="gpt-4o">GPT-4o</option>
+                            <option value="gpt-4">GPT-4</option>
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                            <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+                            <option value="claude-3-haiku">Claude 3 Haiku</option>
+                            <option value="claude-3-opus">Claude 3 Opus</option>
+                            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                        </select>
+
+                        <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
+                            ${this._getMessage('vscode.familyDesc')}
+                        </small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1350,6 +1527,25 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
     <div class="section" style="display: ${this._settingsVisible ? 'none' : 'block'};">
         <div class="section-title">${this._getMessage('section.promptInfo')}</div>
         
+        <!-- Favorite Prompts Management -->
+        <div class="form-group">
+            <label for="favoritePromptSelect">${this._getMessage('favoritePrompts.select')}</label>
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                <select id="favoritePromptSelect" style="flex: 1;" onchange="loadSelectedFavoritePrompt()">
+                    <option value="">${this._getMessage('favoritePrompts.selectOption')}</option>
+                </select>
+                <button onclick="deleteFavoritePrompt()" style="padding: 8px 16px; background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); height: auto; flex-shrink: 0;">
+                    ${this._getMessage('favoritePrompts.delete')}
+                </button>
+            </div>
+        </div>
+
+        <!-- Prompt Save Form -->
+        <div class="form-group">
+            <label for="promptTitle">${this._getMessage('favoritePrompts.title')}</label>
+            <input type="text" id="promptTitle" placeholder="${this._getMessage('favoritePrompts.titlePlaceholder')}">
+        </div>
+        
         <div class="form-group">
             <label for="currentSystemPrompt">${this._getMessage('review.systemPrompt')}</label>
             <textarea id="currentSystemPrompt" placeholder="${this._getMessage('review.systemPromptPlaceholder')}"></textarea>
@@ -1361,6 +1557,10 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         </div>
         
         <div class="buttons">
+            <button onclick="saveCurrentPromptAsFavorite()" style="margin-right: 10px;">
+                <span class="codicon codicon-heart"></span>
+                ${this._getMessage('favoritePrompts.save')}
+            </button>
             <button onclick="runCodeReview()">${this._getMessage('button.review')}</button>
         </div>
     </div>
@@ -1403,6 +1603,22 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
     <script>
         const vscode = acquireVsCodeApi();
 
+        // パネルの展開・折りたたみ機能
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            const toggle = document.getElementById(panelId + 'Toggle');
+            
+            if (panel.classList.contains('expanded')) {
+                panel.classList.remove('expanded');
+                toggle.textContent = '▶';
+                toggle.classList.remove('expanded');
+            } else {
+                panel.classList.add('expanded');
+                toggle.textContent = '▼';
+                toggle.classList.add('expanded');
+            }
+        }
+
         // 言語切り替え関数
         function changeLanguage() {
             const language = document.getElementById('interfaceLanguage').value;
@@ -1415,8 +1631,6 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
 
         function saveSettings() {
             const settings = {
-                systemPrompt: document.getElementById('defaultSystemPrompt').value,
-                reviewPerspective: document.getElementById('defaultReviewPerspective').value,
                 contextLines: parseInt(document.getElementById('contextLines').value) || 50,
                 excludeDeletes: document.getElementById('excludeDeletes').checked,
                 fileExtensions: document.getElementById('fileExtensions').value,
@@ -1443,8 +1657,6 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             console.log('VS Code LM Family element data-saved-value:', vscodeLmFamilyElement.getAttribute('data-saved-value'));
             console.log('JavaScript saveSettings called with VS Code LM Family:', settings.vscodeLmFamily);
             console.log('JavaScript saveSettings called with:', {
-                systemPrompt: settings.systemPrompt ? '***SET***' : 'EMPTY',
-                reviewPerspective: settings.reviewPerspective ? '***SET***' : 'EMPTY',
                 contextLines: settings.contextLines,
                 excludeDeletes: settings.excludeDeletes,
                 fileExtensions: settings.fileExtensions,
@@ -1631,14 +1843,35 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                     // Keep the data attribute for debugging
                     console.log('Final VS Code LM family value after update:', vscodeLmFamilySelect.value);
                     break;
+                case 'favoritePromptsLoaded':
+                    updateFavoritePromptSelect(message.prompts);
+                    break;
+                case 'favoritePromptLoaded':
+                    loadFavoritePromptData(message.prompt);
+                    break;
+                case 'favoritePromptSaved':
+                    if (message.success) {
+                        alert('${this._getMessage('favoritePrompts.saveSuccess')}');
+                        document.getElementById('promptTitle').value = '';
+                        refreshFavoritePrompts();
+                    } else {
+                        alert('${this._getMessage('favoritePrompts.saveError')}: ' + message.error);
+                    }
+                    break;
+                case 'favoritePromptDeleted':
+                    if (message.success) {
+                        alert('${this._getMessage('favoritePrompts.deleteSuccess')}');
+                        document.getElementById('favoritePromptSelect').value = '';
+                        document.getElementById('promptTitle').value = '';
+                        refreshFavoritePrompts();
+                    } else {
+                        alert('${this._getMessage('favoritePrompts.deleteError')}: ' + message.error);
+                    }
+                    break;
             }
         });
 
         function loadSettings(settings) {
-            // Load default prompt settings (for saving)
-            document.getElementById('defaultSystemPrompt').value = settings.systemPrompt || '';
-            document.getElementById('defaultReviewPerspective').value = settings.reviewPerspective || '';
-            
             // Load current prompt information (for execution) - use defaults as initial values
             document.getElementById('currentSystemPrompt').value = settings.systemPrompt || '';
             document.getElementById('currentReviewPerspective').value = settings.reviewPerspective || '';
@@ -1698,6 +1931,31 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             } else {
                 console.log('Provider is not vscode-lm (' + settings.llmProvider + '), skipping family load');
             }
+            
+            // Load favorite prompts
+            refreshFavoritePrompts();
+        }
+
+        function updateFavoritePromptSelect(prompts) {
+            const selectElement = document.getElementById('favoritePromptSelect');
+            selectElement.innerHTML = '<option value="">${this._getMessage('favoritePrompts.selectOption')}</option>';
+            
+            if (prompts && prompts.length > 0) {
+                prompts.forEach(prompt => {
+                    const option = document.createElement('option');
+                    option.value = prompt.id;
+                    option.textContent = prompt.name + ' (' + new Date(prompt.updatedAt).toLocaleDateString() + ')';
+                    selectElement.appendChild(option);
+                });
+            }
+        }
+
+        function loadFavoritePromptData(prompt) {
+            if (prompt) {
+                document.getElementById('promptTitle').value = prompt.name;
+                document.getElementById('currentSystemPrompt').value = prompt.systemPrompt;
+                document.getElementById('currentReviewPerspective').value = prompt.reviewPerspective;
+            }
         }
 
         function updateBranchInfo(branchInfo) {
@@ -1751,16 +2009,71 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         }
 
         // New functions for favorite prompts and file filtering
-        function saveFavoritePrompt() {
+        function saveCurrentPromptAsFavorite() {
+            const title = document.getElementById('promptTitle').value.trim();
+            const systemPrompt = document.getElementById('currentSystemPrompt').value.trim();
+            const reviewPerspective = document.getElementById('currentReviewPerspective').value.trim();
+            
+            if (!title) {
+                alert('${this._getMessage('favoritePrompts.error.titleRequired')}');
+                return;
+            }
+            
+            if (!systemPrompt || !reviewPerspective) {
+                alert('${this._getMessage('favoritePrompts.error.promptsRequired')}');
+                return;
+            }
+            
             vscode.postMessage({
-                command: 'saveFavoritePrompt'
+                command: 'saveFavoritePrompt',
+                data: {
+                    title: title,
+                    systemPrompt: systemPrompt,
+                    reviewPerspective: reviewPerspective
+                }
             });
         }
 
-        function manageFavoritePrompts() {
+        function loadSelectedFavoritePrompt() {
+            const selectElement = document.getElementById('favoritePromptSelect');
+            const selectedValue = selectElement.value;
+            
+            if (!selectedValue) {
+                return;
+            }
+            
             vscode.postMessage({
-                command: 'manageFavoritePrompts'
+                command: 'loadFavoritePrompt',
+                promptId: selectedValue
             });
+        }
+
+        function deleteFavoritePrompt() {
+            const selectElement = document.getElementById('favoritePromptSelect');
+            const selectedValue = selectElement.value;
+            
+            if (!selectedValue) {
+                alert('${this._getMessage('favoritePrompts.error.selectToDelete')}');
+                return;
+            }
+            
+            if (confirm('${this._getMessage('favoritePrompts.confirmDelete')}')) {
+                vscode.postMessage({
+                    command: 'deleteFavoritePrompt',
+                    promptId: selectedValue
+                });
+            }
+        }
+
+        function refreshFavoritePrompts() {
+            vscode.postMessage({
+                command: 'loadFavoritePrompts'
+            });
+        }
+
+        function saveFavoritePrompt() {
+            // Legacy function - redirect to new implementation
+            saveCurrentPromptAsFavorite();
         }
 
         // Function to load VS Code LM families from the extension
@@ -1834,20 +2147,58 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         try {
             // Import necessary modules
             const { ExportService } = await import('./exportService');
-            const { getConfiguration } = await import('./configService');
             const { reviewService } = await import('./reviewService');
-            
-            const config = getConfiguration();
-            const exportService = new ExportService(config);
             
             // Get the latest review result from reviewService
             const reviewResult = reviewService.getLastReviewResult();
             const gitInfo = reviewService.getLastGitInfo();
             
+            // Debug logging
+            console.log('Export attempt - reviewResult:', reviewResult ? 'EXISTS' : 'NULL');
+            console.log('Export attempt - gitInfo:', gitInfo ? 'EXISTS' : 'NULL');
+            
             if (!reviewResult) {
+                console.log('No review result found in reviewService');
                 vscode.window.showWarningMessage('エクスポートするレビュー結果がありません。まずコードレビューを実行してください。');
                 return;
             }
+
+            console.log('Review result found, proceeding with export...');
+
+            // Create a basic config object for ExportService
+            const vsConfig = vscode.workspace.getConfiguration('diffLens');
+            const config = {
+                systemPrompt: vsConfig.get('systemPrompt', ''),
+                reviewPerspective: vsConfig.get('reviewPerspective', ''),
+                contextLines: vsConfig.get('contextLines', 50),
+                excludeDeletes: vsConfig.get('excludeDeletes', true),
+                fileExtensions: vsConfig.get('fileExtensions', ''),
+                llmProvider: vsConfig.get('llmProvider', 'bedrock') as 'bedrock' | 'vscode-lm',
+                awsAccessKey: vsConfig.get('awsAccessKey', ''),
+                awsSecretKey: vsConfig.get('awsSecretKey', ''),
+                awsRegion: vsConfig.get('awsRegion', 'us-east-1'),
+                modelName: vsConfig.get('modelName', 'anthropic.claude-3-5-sonnet-20241022-v2:0'),
+                vscodeLmVendor: vsConfig.get('vscodeLmVendor', 'copilot'),
+                vscodeLmFamily: vsConfig.get('vscodeLmFamily', 'gpt-4o'),
+                // Add missing properties with default values
+                maxFileSize: vsConfig.get('maxFileSize', 5),
+                fileSizeUnit: vsConfig.get('fileSizeUnit', 'MB') as 'KB' | 'MB',
+                showExcludedFiles: vsConfig.get('showExcludedFiles', true),
+                excludedFileLimit: vsConfig.get('excludedFileLimit', 20),
+                excludeBinaryFiles: vsConfig.get('excludeBinaryFiles', true),
+                binaryFileExtensions: vsConfig.get('binaryFileExtensions', 'png,jpg,jpeg,gif,pdf,zip,tar,gz,exe,dll,so,dmg'),
+                textFileExtensions: vsConfig.get('textFileExtensions', 'js,ts,jsx,tsx,vue,py,java,cs,cpp,c,h,php,rb,go,rs,swift,kt,dart,scala'),
+                binaryDetectionMethod: vsConfig.get('binaryDetectionMethod', 'both') as 'extension' | 'content' | 'both',
+                binaryContentThreshold: vsConfig.get('binaryContentThreshold', 0.3),
+                defaultExportFormat: vsConfig.get('defaultExportFormat', 'html') as 'html' | 'json' | 'pdf',
+                exportDirectory: vsConfig.get('exportDirectory', ''),
+                exportFilenamePattern: vsConfig.get('exportFilenamePattern', 'code-review-{timestamp}'),
+                exportTemplate: vsConfig.get('exportTemplate', 'standard') as 'standard' | 'minimal' | 'detailed' | 'corporate',
+                includeGitInfo: vsConfig.get('includeGitInfo', true),
+                includeStatistics: vsConfig.get('includeStatistics', true)
+            };
+            
+            const exportService = new ExportService(config);
 
             // Show save dialog
             const defaultFileName = `code-review${options.autoTimestamp ? `-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}` : ''}`;
@@ -1893,5 +2244,75 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
     public toggleSettingsVisibility() {
         this._settingsVisible = !this._settingsVisible;
         this._updateWebviewContent();
+    }
+
+    // Favorite Prompts Methods
+    private async _saveFavoritePrompt(data: { title: string; systemPrompt: string; reviewPerspective: string }) {
+        try {
+            const result = await FavoritePromptsService.saveFavoritePrompt(
+                data.title,
+                '', // description - empty for now
+                [], // tags - empty for now
+                data.systemPrompt,
+                data.reviewPerspective
+            );
+
+            this._view?.webview.postMessage({
+                command: 'favoritePromptSaved',
+                success: result.success,
+                error: result.message
+            });
+        } catch (error) {
+            this._view?.webview.postMessage({
+                command: 'favoritePromptSaved',
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
+    }
+
+    private _loadFavoritePrompts() {
+        try {
+            const prompts = FavoritePromptsService.getFavoritePrompts();
+            this._view?.webview.postMessage({
+                command: 'favoritePromptsLoaded',
+                prompts: prompts
+            });
+        } catch (error) {
+            console.error('Failed to load favorite prompts:', error);
+        }
+    }
+
+    private _loadFavoritePrompt(promptId: string) {
+        try {
+            const prompts = FavoritePromptsService.getFavoritePrompts();
+            const prompt = prompts.find(p => p.id === promptId);
+            
+            if (prompt) {
+                this._view?.webview.postMessage({
+                    command: 'favoritePromptLoaded',
+                    prompt: prompt
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load favorite prompt:', error);
+        }
+    }
+
+    private async _deleteFavoritePrompt(promptId: string) {
+        try {
+            const result = await FavoritePromptsService.deleteFavoritePrompt(promptId);
+            this._view?.webview.postMessage({
+                command: 'favoritePromptDeleted',
+                success: result.success,
+                error: result.message
+            });
+        } catch (error) {
+            this._view?.webview.postMessage({
+                command: 'favoritePromptDeleted',
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
     }
 }
