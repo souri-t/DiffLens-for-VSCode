@@ -1534,7 +1534,7 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 <select id="favoritePromptSelect" style="flex: 1;" onchange="loadSelectedFavoritePrompt()">
                     <option value="">${this._getMessage('favoritePrompts.selectOption')}</option>
                 </select>
-                <button onclick="deleteFavoritePrompt()" style="padding: 8px 16px; background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); height: auto; flex-shrink: 0;">
+                <button class="secondary" onclick="deleteFavoritePrompt(); return false;" style="height: auto; flex-shrink: 0;">
                     ${this._getMessage('favoritePrompts.delete')}
                 </button>
             </div>
@@ -1602,6 +1602,21 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
 
     <script>
         const vscode = acquireVsCodeApi();
+
+        // グローバルエラーハンドラーを追加
+        window.addEventListener('error', function(e) {
+            console.error('WebView JavaScript Error:', e.error);
+            console.error('Error message:', e.message);
+            console.error('Source:', e.filename, 'Line:', e.lineno);
+        });
+
+        // メッセージ定数を定義
+        const MESSAGES = {
+            selectToDelete: '削除するプロンプトを選択してください。',
+            confirmDelete: 'このプロンプトを削除してもよろしいですか？',
+            deleteSuccess: 'プロンプトが正常に削除されました！',
+            deleteError: 'プロンプトの削除に失敗しました'
+        };
 
         // パネルの展開・折りたたみ機能
         function togglePanel(panelId) {
@@ -1860,12 +1875,12 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'favoritePromptDeleted':
                     if (message.success) {
-                        alert('${this._getMessage('favoritePrompts.deleteSuccess')}');
+                        alert(MESSAGES.deleteSuccess);
                         document.getElementById('favoritePromptSelect').value = '';
                         document.getElementById('promptTitle').value = '';
                         refreshFavoritePrompts();
                     } else {
-                        alert('${this._getMessage('favoritePrompts.deleteError')}: ' + message.error);
+                        alert(MESSAGES.deleteError + ': ' + message.error);
                     }
                     break;
             }
@@ -2049,19 +2064,26 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         }
 
         function deleteFavoritePrompt() {
-            const selectElement = document.getElementById('favoritePromptSelect');
-            const selectedValue = selectElement.value;
-            
-            if (!selectedValue) {
-                alert('${this._getMessage('favoritePrompts.error.selectToDelete')}');
-                return;
-            }
-            
-            if (confirm('${this._getMessage('favoritePrompts.confirmDelete')}')) {
+            console.log('deleteFavoritePrompt function called');
+            try {
+                const selectElement = document.getElementById('favoritePromptSelect');
+                console.log('selectElement:', selectElement);
+                const selectedValue = selectElement.value;
+                console.log('selectedValue:', selectedValue);
+                
+                if (!selectedValue) {
+                    console.log('No prompt selected, showing alert');
+                    alert(MESSAGES.selectToDelete);
+                    return;
+                }
+                
                 vscode.postMessage({
                     command: 'deleteFavoritePrompt',
                     promptId: selectedValue
                 });
+            } catch (error) {
+                console.error('Error in deleteFavoritePrompt:', error);
+                alert('削除処理でエラーが発生しました: ' + error.message);
             }
         }
 
