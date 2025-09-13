@@ -448,6 +448,34 @@ const MESSAGES: Messages = {
         en: 'Please select a prompt to delete.',
         ja: '削除するプロンプトを選択してください。'
     },
+    'favoritePrompts.export': {
+        en: 'Export',
+        ja: 'エクスポート'
+    },
+    'favoritePrompts.import': {
+        en: 'Import',
+        ja: 'インポート'
+    },
+    'favoritePrompts.exportImportDesc': {
+        en: 'Export or import favorite prompts as JSON',
+        ja: 'お気に入りプロンプトのJSONエクスポート/インポート'
+    },
+    'favoritePrompts.exportedSuccess': {
+        en: 'Favorite prompts exported successfully: ',
+        ja: 'お気に入りプロンプトをエクスポートしました: '
+    },
+    'favoritePrompts.exportedError': {
+        en: 'Failed to export favorite prompts: ',
+        ja: 'お気に入りプロンプトのエクスポートに失敗しました: '
+    },
+    'favoritePrompts.importedSuccess': {
+        en: 'Import complete. Imported: ',
+        ja: 'インポートが完了しました。インポート数: '
+    },
+    'favoritePrompts.importedError': {
+        en: 'Failed to import favorite prompts: ',
+        ja: 'お気に入りプロンプトのインポートに失敗しました: '
+    },
     
     // File Filtering Section
     'section.fileFiltering': {
@@ -507,6 +535,16 @@ const MESSAGES: Messages = {
     'export.jsonButton': {
         en: 'Export as JSON',
         ja: 'JSONでエクスポート'
+    }
+    ,
+    // Misc UI texts
+    'error.loadingCommits': {
+        en: 'Error loading commits',
+        ja: 'コミットの読み込みエラー'
+    },
+    'commit.noMessage': {
+        en: '(No commit message)',
+        ja: '(コミットメッセージなし)'
     }
 };
 
@@ -598,6 +636,14 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                         console.log('Processing exportReview message');
                         this._exportReview(message.format, message.options);
                         return;
+                        case 'exportFavoritePrompts':
+                            console.log('Processing exportFavoritePrompts message');
+                            this._exportFavoritePrompts();
+                            return;
+                        case 'importFavoritePrompts':
+                            console.log('Processing importFavoritePrompts message');
+                            this._importFavoritePrompts();
+                            return;
                     default:
                         console.log('Unknown message command:', message.command);
                 }
@@ -1407,7 +1453,7 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                         </div>
                         
                         <div class="form-group">
-                            <label for="awsRegion">${this._getMessage('aws.region')}</label>
+                            <small style="color: var(--vscode-descriptionForeground); display:block; margin-top:8px;">\${this._getMessage('favoritePrompts.exportImportDesc')}</small>
                             <select id="awsRegion">
                             <option value="us-east-1">US East (N. Virginia) - us-east-1</option>
                             <option value="us-west-2">US West (Oregon) - us-west-2</option>
@@ -1489,9 +1535,31 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                         </small>
                     </div>
                 </div>
+                
+            </div>
+        </div>
+
+        <!-- Prompt Management Panel (new, collapsible) -->
+        <div class="settings-panel">
+            <div class="panel-header" onclick="togglePanel('promptManagementPanel')">
+                <h3 class="panel-title">
+                    <span class="panel-icon">💾</span>
+                    ${this._getMessage('section.favoritePrompts')}
+                </h3>
+                <span class="panel-toggle" id="promptManagementPanelToggle">▶</span>
+            </div>
+            <div class="panel-content" id="promptManagementPanel">
+                <div class="form-group">
+                    <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
+                        <button class="secondary" style="width:100%;" onclick="exportFavoritePrompts()">${this._getMessage('favoritePrompts.export')}</button>
+                        <button class="secondary" style="width:100%;" onclick="importFavoritePrompts()">${this._getMessage('favoritePrompts.import')}</button>
+                    </div>
+                    <small style="color: var(--vscode-descriptionForeground); display:block; margin-top:8px;">${this._getMessage('favoritePrompts.exportImportDesc')}</small>
+                </div>
             </div>
         </div>
     </div>
+
 
     <div class="section" style="display: ${this._settingsVisible ? 'none' : 'block'};">
         <div class="section-title">${this._getMessage('section.gitInfo')}</div>
@@ -1593,7 +1661,7 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 <span class="codicon codicon-file-code"></span>
                 ${this._getMessage('export.htmlButton')}
             </button>
-            <button onclick="exportReviewJSON()" style="margin-left: 10px;">
+            <button onclick="exportReviewJSON()">
                 <span class="codicon codicon-file-text"></span>
                 ${this._getMessage('export.jsonButton')}
             </button>
@@ -1610,12 +1678,19 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             console.error('Source:', e.filename, 'Line:', e.lineno);
         });
 
-        // メッセージ定数を定義
+        // メッセージ定数を定義（サーバ側 MESSAGES から注入）
         const MESSAGES = {
-            selectToDelete: '削除するプロンプトを選択してください。',
-            confirmDelete: 'このプロンプトを削除してもよろしいですか？',
-            deleteSuccess: 'プロンプトが正常に削除されました！',
-            deleteError: 'プロンプトの削除に失敗しました'
+            selectToDelete: ${JSON.stringify(this._getMessage('favoritePrompts.error.selectToDelete'))},
+            confirmDelete: ${JSON.stringify(this._getMessage('favoritePrompts.confirmDelete'))},
+            deleteSuccess: ${JSON.stringify(this._getMessage('favoritePrompts.deleteSuccess'))},
+            deleteError: ${JSON.stringify(this._getMessage('favoritePrompts.deleteError'))},
+            exportLabel: ${JSON.stringify(this._getMessage('favoritePrompts.export'))},
+            importLabel: ${JSON.stringify(this._getMessage('favoritePrompts.import'))},
+            exportImportDesc: ${JSON.stringify(this._getMessage('favoritePrompts.exportImportDesc'))},
+            exportedSuccessPrefix: ${JSON.stringify(this._getMessage('favoritePrompts.exportedSuccess'))},
+            exportedErrorPrefix: ${JSON.stringify(this._getMessage('favoritePrompts.exportedError'))},
+            importedSuccessPrefix: ${JSON.stringify(this._getMessage('favoritePrompts.importedSuccess'))},
+            importedErrorPrefix: ${JSON.stringify(this._getMessage('favoritePrompts.importedError'))}
         };
 
         // パネルの展開・折りたたみ機能
@@ -1883,6 +1958,21 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                         alert(MESSAGES.deleteError + ': ' + message.error);
                     }
                     break;
+                        case 'favoritePromptsExported':
+                                if (message.success) {
+                                    alert(MESSAGES.exportedSuccessPrefix + (message.filePath || ''));
+                                } else {
+                                    alert(MESSAGES.exportedErrorPrefix + message.error);
+                                }
+                            break;
+                            case 'favoritePromptsImported':
+                                if (message.success) {
+                                    alert(MESSAGES.importedSuccessPrefix + (message.imported || 0));
+                                    refreshFavoritePrompts();
+                                } else {
+                                    alert(MESSAGES.importedErrorPrefix + message.error);
+                                }
+                                break;
             }
         });
 
@@ -2081,9 +2171,9 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                     command: 'deleteFavoritePrompt',
                     promptId: selectedValue
                 });
-            } catch (error) {
+                } catch (error) {
                 console.error('Error in deleteFavoritePrompt:', error);
-                alert('削除処理でエラーが発生しました: ' + error.message);
+                alert(MESSAGES.deleteError + ': ' + (error?.message || String(error)));
             }
         }
 
@@ -2096,6 +2186,16 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         function saveFavoritePrompt() {
             // Legacy function - redirect to new implementation
             saveCurrentPromptAsFavorite();
+        }
+
+        // Export favorite prompts - ask extension to show save dialog and write file
+        function exportFavoritePrompts() {
+            vscode.postMessage({ command: 'exportFavoritePrompts' });
+        }
+
+        // Import favorite prompts - ask extension to show open dialog and import
+        function importFavoritePrompts() {
+            vscode.postMessage({ command: 'importFavoritePrompts' });
         }
 
         // Function to load VS Code LM families from the extension
@@ -2335,6 +2435,58 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error'
             });
+        }
+    }
+
+    // Export favorite prompts to a JSON file selected by user
+    private async _exportFavoritePrompts() {
+        try {
+            const exportJson = FavoritePromptsService.exportFavoritePrompts();
+
+            const saveUri = await vscode.window.showSaveDialog({
+                defaultUri: vscode.Uri.file(`favorite-prompts-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.json`),
+                filters: { 'JSON Files': ['json'] }
+            });
+
+            if (!saveUri) {
+                // user cancelled
+                this._view?.webview.postMessage({ command: 'favoritePromptsExported', success: false, error: 'User cancelled' });
+                return;
+            }
+
+            await vscode.workspace.fs.writeFile(saveUri, Buffer.from(exportJson, 'utf8'));
+
+            this._view?.webview.postMessage({ command: 'favoritePromptsExported', success: true, filePath: saveUri.fsPath });
+        } catch (error) {
+            console.error('Export favorite prompts failed:', error);
+            this._view?.webview.postMessage({ command: 'favoritePromptsExported', success: false, error: error instanceof Error ? error.message : String(error) });
+        }
+    }
+
+    // Import favorite prompts from a JSON file selected by user
+    private async _importFavoritePrompts() {
+        try {
+            const uris = await vscode.window.showOpenDialog({
+                canSelectMany: false,
+                openLabel: 'Import',
+                filters: { 'JSON Files': ['json'] }
+            });
+
+            if (!uris || uris.length === 0) {
+                this._view?.webview.postMessage({ command: 'favoritePromptsImported', success: false, error: 'User cancelled' });
+                return;
+            }
+
+            const fileUri = uris[0];
+            const fileData = await vscode.workspace.fs.readFile(fileUri);
+            const content = Buffer.from(fileData).toString('utf8');
+
+            const result = await FavoritePromptsService.importFavoritePrompts(content);
+
+            this._view?.webview.postMessage({ command: 'favoritePromptsImported', success: result.success, imported: result.imported, error: result.message });
+        } catch (error) {
+            console.error('Import favorite prompts failed:', error);
+            this._view?.webview.postMessage({ command: 'favoritePromptsImported', success: false, error: error instanceof Error ? error.message : String(error) });
         }
     }
 }
