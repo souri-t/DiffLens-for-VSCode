@@ -17,8 +17,6 @@ export class FavoritePromptsService {
     // Save a new favorite prompt
     static async saveFavoritePrompt(
         name: string,
-        description: string,
-        tags: string[],
         systemPrompt: string,
         reviewPerspective: string
     ): Promise<{ success: boolean; message: string; prompt?: FavoritePrompt }> {
@@ -52,8 +50,6 @@ export class FavoritePromptsService {
             const newPrompt: FavoritePrompt = {
                 id: uuidv4(),
                 name: name.trim(),
-                description: description.trim(),
-                tags: tags.map(tag => tag.trim()).filter(tag => tag),
                 systemPrompt: systemPrompt.trim(),
                 reviewPerspective: reviewPerspective.trim(),
                 createdAt: now,
@@ -77,8 +73,6 @@ export class FavoritePromptsService {
     static async updateFavoritePrompt(
         id: string,
         name: string,
-        description: string,
-        tags: string[],
         systemPrompt: string,
         reviewPerspective: string
     ): Promise<{ success: boolean; message: string; prompt?: FavoritePrompt }> {
@@ -111,8 +105,6 @@ export class FavoritePromptsService {
             const updatedPrompt: FavoritePrompt = {
                 ...currentPrompts[promptIndex],
                 name: name.trim(),
-                description: description.trim(),
-                tags: tags.map(tag => tag.trim()).filter(tag => tag),
                 systemPrompt: systemPrompt.trim(),
                 reviewPerspective: reviewPerspective.trim(),
                 updatedAt: new Date().toISOString()
@@ -188,29 +180,24 @@ export class FavoritePromptsService {
         }
     }
 
-    // Search favorite prompts by name or tags
-    static searchFavoritePrompts(query: string): FavoritePrompt[] {
-        const allPrompts = this.getFavoritePrompts();
-        const lowercaseQuery = query.toLowerCase();
-
-        return allPrompts.filter(prompt => 
-            prompt.name.toLowerCase().includes(lowercaseQuery) ||
-            prompt.description.toLowerCase().includes(lowercaseQuery) ||
-            prompt.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery))
-        );
-    }
-
     // Export favorite prompts to JSON
     static exportFavoritePrompts(): string {
         const prompts = this.getFavoritePrompts();
+        // id, usage, tags, description, createdAt, updatedAtを除外
+        const exportPrompts = prompts.map(p => ({
+            name: p.name,
+            systemPrompt: p.systemPrompt,
+            reviewPerspective: p.reviewPerspective
+            // description, createdAt, updatedAt, tags, usage, idは含めない
+        }));
         const exportData = {
             exportInfo: {
                 timestamp: new Date().toISOString(),
                 version: '1.0.0',
                 source: 'DiffLens',
-                promptCount: prompts.length
+                promptCount: exportPrompts.length
             },
-            prompts: prompts
+            prompts: exportPrompts
         };
         return JSON.stringify(exportData, null, 2);
     }
@@ -250,13 +237,11 @@ export class FavoritePromptsService {
                     continue;
                 }
 
-                // Create valid prompt with new ID and timestamps
+                // 必要なフィールドのみで新規作成（id, usage, createdAt, updatedAtは無視）
                 const now = new Date().toISOString();
                 const validPrompt: FavoritePrompt = {
                     id: uuidv4(),
                     name: importPrompt.name,
-                    description: importPrompt.description || '',
-                    tags: Array.isArray(importPrompt.tags) ? importPrompt.tags : [],
                     systemPrompt: importPrompt.systemPrompt,
                     reviewPerspective: importPrompt.reviewPerspective,
                     createdAt: now,
@@ -266,7 +251,6 @@ export class FavoritePromptsService {
                         lastUsed: ''
                     }
                 };
-
                 validPrompts.push(validPrompt);
             }
 
@@ -315,8 +299,6 @@ export class FavoritePromptsService {
 
         await this.saveFavoritePrompt(
             autoSaveName,
-            'Automatically saved prompt configuration',
-            ['auto-save'],
             currentState.systemPrompt,
             currentState.reviewPerspective
         );

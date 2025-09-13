@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as os from 'os';
+import * as path from 'path';
 import { FavoritePromptsService } from './favoritePromptsService';
 
 // VS Code Git API types (duplicate from extension.ts for self-contained provider)
@@ -2420,8 +2422,10 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
 
             // Show save dialog
             const defaultFileName = `code-review${options.autoTimestamp ? `-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}` : ''}`;
+            const homeDir = os.homedir();
+            const defaultPath = path.join(homeDir, `${defaultFileName}.${format}`);
             const saveUri = await vscode.window.showSaveDialog({
-                defaultUri: vscode.Uri.file(`${defaultFileName}.${format}`),
+                defaultUri: vscode.Uri.file(defaultPath),
                 filters: format === 'html' ? {
                     'HTML Files': ['html']
                 } : {
@@ -2539,8 +2543,10 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         try {
             const exportJson = FavoritePromptsService.exportFavoritePrompts();
 
+            const homeDir = os.homedir();
+            const defaultPath = path.join(homeDir, `favorite-prompts-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.json`);
             const saveUri = await vscode.window.showSaveDialog({
-                defaultUri: vscode.Uri.file(`favorite-prompts-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.json`),
+                defaultUri: vscode.Uri.file(defaultPath),
                 filters: { 'JSON Files': ['json'] }
             });
 

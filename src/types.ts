@@ -105,8 +105,6 @@ export interface ReviewConfig {
 export interface FavoritePrompt {
 	id: string;
 	name: string;
-	description: string;
-	tags: string[];
 	systemPrompt: string;
 	reviewPerspective: string;
 	createdAt: string;
