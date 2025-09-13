@@ -442,14 +442,14 @@ const MESSAGES: Messages = {
     
     // Favorite Prompts Section
     'section.favoritePrompts': {
-        en: 'Favorite Prompts',
-        ja: 'お気に入りプロンプト',
-        zh: '收藏提示'
+        en: 'Saved Prompts',
+        ja: '保存プロンプト',
+        zh: '保存的提示'
     },
     'favoritePrompts.select': {
-        en: 'Select Favorite Prompt:',
-        ja: 'お気に入りプロンプトを選択:',
-        zh: '选择收藏提示:'
+        en: 'Select Saved Prompt:',
+        ja: '保存プロンプトを選択:',
+        zh: '选择保存的提示:'
     },
     'favoritePrompts.selectOption': {
         en: 'Select a saved prompt...',
@@ -467,7 +467,7 @@ const MESSAGES: Messages = {
         zh: '输入此提示的标题'
     },
     'favoritePrompts.save': {
-        en: 'Save Current Prompts',
+        en: 'Save Current Prompt',
         ja: '現在のプロンプトを保存',
         zh: '保存当前提示'
     },
@@ -477,9 +477,9 @@ const MESSAGES: Messages = {
         zh: '删除'
     },
     'favoritePrompts.manage': {
-        en: 'Manage Favorites',
-        ja: 'お気に入り管理',
-        zh: '管理收藏'
+        en: 'Manage Saved Prompts',
+        ja: '保存プロンプト管理',
+        zh: '管理保存的提示'
     },
     'favoritePrompts.saveSuccess': {
         en: 'Prompt saved successfully!',
@@ -533,17 +533,17 @@ const MESSAGES: Messages = {
     },
     'favoritePrompts.exportImportDesc': {
         en: 'Export or import favorite prompts as JSON',
-        ja: 'お気に入りプロンプトのJSONエクスポート/インポート',
+        ja: '保存プロンプトのJSONエクスポート/インポート',
         zh: '以 JSON 格式导入或导出收藏提示'
     },
     'favoritePrompts.exportedSuccess': {
         en: 'Favorite prompts exported successfully: ',
-        ja: 'お気に入りプロンプトをエクスポートしました: ',
+        ja: '保存プロンプトをエクスポートしました: ',
         zh: '收藏提示导出成功: '
     },
     'favoritePrompts.exportedError': {
         en: 'Failed to export favorite prompts: ',
-        ja: 'お気に入りプロンプトのエクスポートに失敗しました: ',
+        ja: '保存プロンプトのエクスポートに失敗しました: ',
         zh: '收藏提示导出失败: '
     },
     'favoritePrompts.importedSuccess': {
@@ -553,7 +553,7 @@ const MESSAGES: Messages = {
     },
     'favoritePrompts.importedError': {
         en: 'Failed to import favorite prompts: ',
-        ja: 'お気に入りプロンプトのインポートに失敗しました: ',
+        ja: '保存プロンプトのインポートに失敗しました: ',
         zh: '收藏提示导入失败: '
     },
     
