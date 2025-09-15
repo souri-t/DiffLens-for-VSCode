@@ -42,7 +42,7 @@ This VS Code extension provides intelligent code review of your git changes usin
   - **AWS Bedrock**: Requires AWS account with Bedrock access and credentials
   - **VS Code LM API**: Requires GitHub Copilot subscription or compatible VS Code LM provider
 
-**Note**: This extension uses VS Code's built-in Git API exclusively for all Git operations, including file content retrieval and diff generation. No external Git installation is required - the extension works seamlessly with only the VS Code Git extension enabled (which is the default). Historical file content is approximated using available VS Code Git API capabilities.
+**Note**: This extension uses VS Code's Git API for all Git operations, including file content retrieval and diff generation. If Git is not installed on your system, please install it from the [official download page](https://git-scm.com/downloads).
 
 ## Extension Settings
 

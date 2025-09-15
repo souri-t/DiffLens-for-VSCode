@@ -158,18 +158,15 @@ ${reviewResult.review}`;
 		language: 'markdown'
 	});
 	await vscode.window.showTextDocument(doc);
+	// Export functionality is disabled for this release
+	// const exportOption = await vscode.window.showInformationMessage(
+	// 	'コードレビューが完了しました。結果をエクスポートしますか？',
+	// 	'HTML', 'JSON', 'いいえ'
+	// );
 
-	// Show export options
-	const exportOption = await vscode.window.showInformationMessage(
-		'コードレビューが完了しました。結果をエクスポートしますか？',
-		'HTML', 'JSON', '除外ファイル確認', 'いいえ'
-	);
-
-	if (exportOption === 'HTML' || exportOption === 'JSON') {
-		vscode.commands.executeCommand('diff-lens.exportReview', reviewResult, gitInfo);
-	} else if (exportOption === '除外ファイル確認' && exclusionSummary) {
-		vscode.commands.executeCommand('diff-lens.showExcludedFiles', exclusionSummary);
-	}
+	// if (exportOption === 'HTML' || exportOption === 'JSON') {
+	// 	vscode.commands.executeCommand('diff-lens.exportReview', reviewResult, gitInfo);
+	// }
 }
 
 // Review service singleton to store last review results

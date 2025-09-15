@@ -1254,7 +1254,8 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         </div>
     </div>
 
-    <div class="section" style="display: ${this._settingsVisible ? 'none' : 'block'};">
+    <!-- Export section is disabled for this release -->
+    <!-- <div class="section" style="display: ${this._settingsVisible ? 'none' : 'block'};">
         <div class="section-title">${this._getMessage('section.exportOptions')}</div>
         
         <div class="form-group">
@@ -1287,7 +1288,7 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 ${this._getMessage('export.jsonButton')}
             </button>
         </div>
-    </div>
+    </div> -->
 
     <script>
         const vscode = acquireVsCodeApi();
@@ -1356,9 +1357,10 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 maxFileSize: parseInt(document.getElementById('maxFileSize').value) || 10,
                 fileSizeUnit: 'MB', // Fixed to MB
                 excludeBinaryFiles: document.getElementById('excludeBinaryFiles').checked,
-                binaryExtensions: document.getElementById('binaryExtensions').value,
-                includeMetadata: document.getElementById('includeMetadata').checked,
-                autoTimestamp: document.getElementById('autoTimestamp').checked
+                binaryExtensions: document.getElementById('binaryExtensions').value
+                // Export settings are disabled for this release
+                // includeMetadata: document.getElementById('includeMetadata').checked,
+                // autoTimestamp: document.getElementById('autoTimestamp').checked
             };
 
             // Debug log in webview
@@ -1432,34 +1434,34 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             });
         }
 
-        // Export functions
-        function exportReviewHTML() {
-            const includeMetadata = document.getElementById('includeMetadata').checked;
-            const autoTimestamp = document.getElementById('autoTimestamp').checked;
-            
-            vscode.postMessage({
-                command: 'exportReview',
-                format: 'html',
-                options: {
-                    includeMetadata: includeMetadata,
-                    autoTimestamp: autoTimestamp
-                }
-            });
-        }
+        // Export functions are disabled for this release
+        // function exportReviewHTML() {
+        //     const includeMetadata = document.getElementById('includeMetadata').checked;
+        //     const autoTimestamp = document.getElementById('autoTimestamp').checked;
+        //     
+        //     vscode.postMessage({
+        //         command: 'exportReview',
+        //         format: 'html',
+        //         options: {
+        //             includeMetadata: includeMetadata,
+        //             autoTimestamp: autoTimestamp
+        //         }
+        //     });
+        // }
 
-        function exportReviewJSON() {
-            const includeMetadata = document.getElementById('includeMetadata').checked;
-            const autoTimestamp = document.getElementById('autoTimestamp').checked;
-            
-            vscode.postMessage({
-                command: 'exportReview',
-                format: 'json',
-                options: {
-                    includeMetadata: includeMetadata,
-                    autoTimestamp: autoTimestamp
-                }
-            });
-        }
+        // function exportReviewJSON() {
+        //     const includeMetadata = document.getElementById('includeMetadata').checked;
+        //     const autoTimestamp = document.getElementById('autoTimestamp').checked;
+        //     
+        //     vscode.postMessage({
+        //         command: 'exportReview',
+        //         format: 'json',
+        //         options: {
+        //             includeMetadata: includeMetadata,
+        //             autoTimestamp: autoTimestamp
+        //         }
+        //     });
+        // }
 
         // Message handling for responses from extension
         let messageHandlers = new Map();
@@ -1643,9 +1645,9 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             // fileSizeUnit is now fixed to MB, no need to load from settings
             document.getElementById('excludeBinaryFiles').checked = settings.excludeBinaryFiles !== undefined ? settings.excludeBinaryFiles : true;
             document.getElementById('binaryExtensions').value = settings.binaryExtensions || '.exe,.dll,.so,.dylib,.bin,.class,.jar,.war,.ear,.app,.dmg,.pkg,.msi,.deb,.rpm,.snap,.flatpak,.appimage';
-            // exportDirectory removed - using file save dialog instead
-            document.getElementById('includeMetadata').checked = settings.includeMetadata !== undefined ? settings.includeMetadata : true;
-            document.getElementById('autoTimestamp').checked = settings.autoTimestamp !== undefined ? settings.autoTimestamp : true;
+            // Export settings are disabled for this release
+            // document.getElementById('includeMetadata').checked = settings.includeMetadata !== undefined ? settings.includeMetadata : true;
+            // document.getElementById('autoTimestamp').checked = settings.autoTimestamp !== undefined ? settings.autoTimestamp : true;
             
             // Update provider-specific UI visibility
             toggleProviderSettings();

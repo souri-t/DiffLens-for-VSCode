@@ -334,12 +334,24 @@ async function exportReview(reviewResult: any, gitInfo: any) {
 		return;
 	}
 
+	// 保存先を選択するダイアログを表示
+	const saveUri = await vscode.window.showSaveDialog({
+		defaultUri: vscode.Uri.file(`code-review-${new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')}.${format.value}`),
+		filters: {
+			[format.value.toUpperCase()]: [format.value]
+		}
+	});
+
+	if (!saveUri) {
+		return;
+	}
+
 	try {
 		let result;
 		if (format.value === 'html') {
-			result = await exportService.exportToHtml(reviewResult, gitInfo, {}, {});
+			result = await exportService.exportToHtml(reviewResult, gitInfo, {}, {}, saveUri.fsPath);
 		} else {
-			result = await exportService.exportToJson(reviewResult, gitInfo, {}, {});
+			result = await exportService.exportToJson(reviewResult, gitInfo, {}, {}, saveUri.fsPath);
 		}
 
 		if (result.success) {
@@ -348,8 +360,15 @@ async function exportReview(reviewResult: any, gitInfo: any) {
 				'ファイルを開く'
 			);
 			if (openFile === 'ファイルを開く' && result.filePath) {
-				const doc = await vscode.workspace.openTextDocument(result.filePath);
-				await vscode.window.showTextDocument(doc);
+				if (format.value === 'html') {
+					// HTMLファイルはブラウザで開く
+					const fileUri = vscode.Uri.parse(`file://${result.filePath}`);
+					await vscode.env.openExternal(fileUri);
+				} else {
+					// JSONファイルはVS Codeで開く
+					const doc = await vscode.workspace.openTextDocument(result.filePath);
+					await vscode.window.showTextDocument(doc);
+				}
 			}
 		} else {
 			vscode.window.showErrorMessage(result.message);
