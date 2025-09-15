@@ -148,6 +148,7 @@ export class ExportService {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{title}}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -348,10 +349,25 @@ export class ExportService {
             border-radius: 4px;
             padding: 12px;
             overflow-x: auto;
+            white-space: pre;
         }
         .review-content-html pre code {
             background: none;
             padding: 0;
+        }
+        /* Prism.js syntax highlighting overrides */
+        .review-content-html pre[class*="language-"] {
+            background: #f5f2f0;
+            border: 1px solid #e1e1e1;
+            border-radius: 4px;
+            padding: 12px;
+            overflow-x: auto;
+            margin: 16px 0;
+            white-space: pre;
+        }
+        .review-content-html code[class*="language-"] {
+            background: none;
+            color: #333;
         }
         .review-content-html blockquote {
             border-left: 4px solid #dee2e6;
@@ -467,6 +483,8 @@ export class ExportService {
             event.target.classList.add('active');
         }
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 </body>
 </html>`;
     }
@@ -563,12 +581,10 @@ export class ExportService {
         
         // Convert code blocks first (to avoid interference with other patterns)
         html = html.replace(/```([\w]*)?\n([\s\S]*?)```/g, (match, lang, code) => {
-            const normalizedCode = this.normalizeCodeBlockIndent(code);
-            return `<pre><code class="language-${lang || ''}">${normalizedCode}</code></pre>`;
+            return `<pre><code class="language-${lang || ''}">${code}</code></pre>`;
         });
         html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
-            const normalizedCode = this.normalizeCodeBlockIndent(code);
-            return `<pre><code>${normalizedCode}</code></pre>`;
+            return `<pre><code>${code}</code></pre>`;
         });
         
         // Convert headers (h1-h6)
