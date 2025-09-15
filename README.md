@@ -122,6 +122,7 @@ The extension supports two interface languages with instant switching:
 
 - **English**: Default interface language
 - **Japanese**: Complete Japanese localization including all UI elements, messages, and labels
+- **Chinese**: Complete Chinese localization including all UI elements, messages, and labels
 
 Language can be changed in the settings area and the interface will update immediately without requiring a restart. The language preference is saved and persists across VS Code sessions.
 
