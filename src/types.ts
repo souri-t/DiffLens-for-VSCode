@@ -218,4 +218,6 @@ export interface ExportHistoryItem {
 export interface ReviewResult {
 	modelName: string;
 	review: string;
+	systemPrompt?: string;
+	reviewPerspective?: string;
 }

@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { SettingsViewProvider } from './settingsViewProvider';
 import { getConfiguration, validateConfiguration, getAvailableVSCodeLMFamilies } from './configService';
-import { isGitRepository, refreshGitAPI } from './gitService';
+import { isGitRepository, refreshGitAPI, getGitRepository } from './gitService';
 import { generateNativeGitDiff, showDiffPreviewFromCommit } from './diffService';
 import { reviewWithLLM, showReviewResults } from './reviewService';
 import { logGitOperation, disposeLogger } from './logger';
@@ -192,8 +193,11 @@ async function runCodeReview(selectedCommit?: string, customPrompts?: {systemPro
 			
 			progress.report({ increment: 100, message: 'Review complete!' });
 
+			// Get Git information for export
+			const gitInfo = await getGitInformation(workspacePath, selectedCommit);
+			
 			// Show results
-			await showReviewResults(reviewResult, { selectedCommit }, diffResult.exclusionSummary);
+			await showReviewResults(reviewResult, gitInfo, diffResult.exclusionSummary, diff);
 		});
 
 	} catch (error) {
@@ -323,12 +327,7 @@ async function exportReview(reviewResult: any, gitInfo: any) {
 	const config = getConfiguration();
 	const exportService = new ExportService(config);
 
-	const format = await vscode.window.showQuickPick([
-		{ label: 'HTML', value: 'html' },
-		{ label: 'JSON', value: 'json' }
-	], {
-		placeHolder: 'エクスポート形式を選択してください'
-	});
+	const format = { label: 'HTML', value: 'html' }; // JSONエクスポートは削除されたためHTMLのみ
 
 	if (!format) {
 		return;
@@ -347,11 +346,17 @@ async function exportReview(reviewResult: any, gitInfo: any) {
 	}
 
 	try {
+		// Get diff text from reviewService
+		const { reviewService } = await import('./reviewService');
+		const diffText = reviewService.getLastDiffText();
+		const diffConfig = { diffText };
+
 		let result;
 		if (format.value === 'html') {
-			result = await exportService.exportToHtml(reviewResult, gitInfo, {}, {}, saveUri.fsPath);
+			result = await exportService.exportToHtml(reviewResult, gitInfo, diffConfig, {}, diffText, saveUri.fsPath);
 		} else {
-			result = await exportService.exportToJson(reviewResult, gitInfo, {}, {}, saveUri.fsPath);
+			vscode.window.showErrorMessage('JSONエクスポートは現在サポートされていません。');
+			return;
 		}
 
 		if (result.success) {
@@ -394,6 +399,83 @@ async function showExcludedFiles(exclusionSummary: any) {
 		language: 'markdown'
 	});
 	await vscode.window.showTextDocument(doc);
+}
+
+// Get Git information for export
+async function getGitInformation(workspacePath: string, selectedCommit?: string): Promise<any> {
+	try {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+		if (!workspaceFolder) {
+			return {
+				repository: 'Unknown',
+				currentBranch: 'Unknown',
+				commitHash: 'Unknown',
+				commitMessage: 'Unknown',
+				author: 'Unknown',
+				commitDate: new Date().toISOString(),
+				selectedCommit: selectedCommit || null
+			};
+		}
+
+		const repository = await getGitRepository(workspaceFolder);
+		if (!repository) {
+			return {
+				repository: path.basename(workspacePath),
+				currentBranch: 'Unknown',
+				commitHash: 'Unknown',
+				commitMessage: 'Unknown',
+				author: 'Unknown',
+				commitDate: new Date().toISOString(),
+				selectedCommit: selectedCommit || null
+			};
+		}
+
+		// Get repository name
+		const repoName = path.basename(repository.rootUri.fsPath);
+
+		// Get current branch
+		const currentBranch = repository.state.HEAD?.name || 'Unknown';
+
+		// Get commit information
+		let commitHash = 'Unknown';
+		let commitMessage = 'Unknown';
+		let author = 'Unknown';
+		let commitDate = new Date().toISOString();
+
+		try {
+			const targetCommit = selectedCommit || repository.state.HEAD?.commit;
+			if (targetCommit) {
+				const commit = await repository.getCommit(targetCommit);
+				commitHash = commit.hash;
+				commitMessage = commit.message.split('\n')[0]; // First line only
+				author = commit.authorName || 'Unknown';
+				commitDate = commit.authorDate?.toISOString() || new Date().toISOString();
+			}
+		} catch (error) {
+			console.log('Failed to get commit information:', error);
+		}
+
+		return {
+			repository: repoName,
+			currentBranch: currentBranch,
+			commitHash: commitHash,
+			commitMessage: commitMessage,
+			author: author,
+			commitDate: commitDate,
+			selectedCommit: selectedCommit || null
+		};
+	} catch (error) {
+		console.log('Failed to get Git information:', error);
+		return {
+			repository: path.basename(workspacePath),
+			currentBranch: 'Unknown',
+			commitHash: 'Unknown',
+			commitMessage: 'Unknown',
+			author: 'Unknown',
+			commitDate: new Date().toISOString(),
+			selectedCommit: selectedCommit || null
+		};
+	}
 }
 
 // This method is called when your extension is deactivated

@@ -1254,20 +1254,9 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         </div>
     </div>
 
-    <!-- Export section is disabled for this release -->
-    <!-- <div class="section" style="display: ${this._settingsVisible ? 'none' : 'block'};">
+    <div class="section" style="display: ${this._settingsVisible ? 'none' : 'block'};">
         <div class="section-title">${this._getMessage('section.exportOptions')}</div>
         
-        <div class="form-group">
-            <label>
-                <input type="checkbox" id="includeMetadata"> 
-                ${this._getMessage('export.includeMetadata')}
-            </label>
-            <small style="color: var(--vscode-descriptionForeground); display: block; margin-top: 5px;">
-                ${this._getMessage('export.includeMetadataDesc')}
-            </small>
-        </div>
-
         <div class="form-group">
             <label>
                 <input type="checkbox" id="autoTimestamp"> 
@@ -1283,12 +1272,8 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 <span class="codicon codicon-file-code"></span>
                 ${this._getMessage('export.htmlButton')}
             </button>
-            <button onclick="exportReviewJSON()">
-                <span class="codicon codicon-file-text"></span>
-                ${this._getMessage('export.jsonButton')}
-            </button>
         </div>
-    </div> -->
+    </div>
 
     <script>
         const vscode = acquireVsCodeApi();
@@ -1357,10 +1342,8 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                 maxFileSize: parseInt(document.getElementById('maxFileSize').value) || 10,
                 fileSizeUnit: 'MB', // Fixed to MB
                 excludeBinaryFiles: document.getElementById('excludeBinaryFiles').checked,
-                binaryExtensions: document.getElementById('binaryExtensions').value
-                // Export settings are disabled for this release
-                // includeMetadata: document.getElementById('includeMetadata').checked,
-                // autoTimestamp: document.getElementById('autoTimestamp').checked
+                binaryExtensions: document.getElementById('binaryExtensions').value,
+                autoTimestamp: document.getElementById('autoTimestamp').checked
             };
 
             // Debug log in webview
@@ -1434,34 +1417,20 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             });
         }
 
-        // Export functions are disabled for this release
-        // function exportReviewHTML() {
-        //     const includeMetadata = document.getElementById('includeMetadata').checked;
-        //     const autoTimestamp = document.getElementById('autoTimestamp').checked;
-        //     
-        //     vscode.postMessage({
-        //         command: 'exportReview',
-        //         format: 'html',
-        //         options: {
-        //             includeMetadata: includeMetadata,
-        //             autoTimestamp: autoTimestamp
-        //         }
-        //     });
-        // }
+        // Export functions
+        function exportReviewHTML() {
+            const autoTimestamp = document.getElementById('autoTimestamp').checked;
+            
+            vscode.postMessage({
+                command: 'exportReview',
+                format: 'html',
+                options: {
+                    autoTimestamp: autoTimestamp
+                }
+            });
+        }
 
-        // function exportReviewJSON() {
-        //     const includeMetadata = document.getElementById('includeMetadata').checked;
-        //     const autoTimestamp = document.getElementById('autoTimestamp').checked;
-        //     
-        //     vscode.postMessage({
-        //         command: 'exportReview',
-        //         format: 'json',
-        //         options: {
-        //             includeMetadata: includeMetadata,
-        //             autoTimestamp: autoTimestamp
-        //         }
-        //     });
-        // }
+
 
         // Message handling for responses from extension
         let messageHandlers = new Map();
@@ -1645,9 +1614,8 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             // fileSizeUnit is now fixed to MB, no need to load from settings
             document.getElementById('excludeBinaryFiles').checked = settings.excludeBinaryFiles !== undefined ? settings.excludeBinaryFiles : true;
             document.getElementById('binaryExtensions').value = settings.binaryExtensions || '.exe,.dll,.so,.dylib,.bin,.class,.jar,.war,.ear,.app,.dmg,.pkg,.msi,.deb,.rpm,.snap,.flatpak,.appimage';
-            // Export settings are disabled for this release
-            // document.getElementById('includeMetadata').checked = settings.includeMetadata !== undefined ? settings.includeMetadata : true;
-            // document.getElementById('autoTimestamp').checked = settings.autoTimestamp !== undefined ? settings.autoTimestamp : true;
+            // exportDirectory removed - using file save dialog instead
+            document.getElementById('autoTimestamp').checked = settings.autoTimestamp !== undefined ? settings.autoTimestamp : true;
             
             // Update provider-specific UI visibility
             toggleProviderSettings();
@@ -1965,9 +1933,11 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             // Export with the selected file path
             let result;
             if (format === 'html') {
-                result = await exportService.exportToHtml(reviewResult, gitInfo, options, {}, saveUri.fsPath);
+                const diffText = reviewService.getLastDiffText();
+                result = await exportService.exportToHtml(reviewResult, gitInfo, options, {}, diffText, saveUri.fsPath);
             } else {
-                result = await exportService.exportToJson(reviewResult, gitInfo, options, {}, saveUri.fsPath);
+                vscode.window.showErrorMessage('JSONエクスポートは現在サポートされていません。');
+                return;
             }
 
             if (result.success) {
@@ -1976,8 +1946,9 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                     'ファイルを開く'
                 );
                 if (openFile === 'ファイルを開く' && result.filePath) {
-                    const doc = await vscode.workspace.openTextDocument(result.filePath);
-                    await vscode.window.showTextDocument(doc);
+                    // HTMLファイルはブラウザで開く
+                    const fileUri = vscode.Uri.parse(`file://${result.filePath}`);
+                    await vscode.env.openExternal(fileUri);
                 }
             } else {
                 vscode.window.showErrorMessage(result.message);
