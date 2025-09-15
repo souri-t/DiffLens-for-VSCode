@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as os from 'os';
 import * as path from 'path';
 import { FavoritePromptsService } from './favoritePromptsService';
+import { LanguageService } from './languageService';
 
 // VS Code Git API types (duplicate from extension.ts for self-contained provider)
 interface GitAPI {
@@ -161,489 +162,7 @@ async function getRemoteBranchMapping(repository: any): Promise<Map<string, stri
 	}
 }
 
-// Internationalization messages
-interface Messages {
-    [key: string]: {
-        en: string;
-        ja: string;
-        zh: string;
-    };
-}
 
-const MESSAGES: Messages = {
-    // Section titles
-    'section.settingsTitle': {
-        en: 'DiffLens Settings',
-        ja: 'DiffLens 設定',
-        zh: 'DiffLens 设置'
-    },
-    'section.language': {
-        en: 'Language Settings',
-        ja: '言語設定',
-        zh: '语言设置'
-    },
-    'section.gitInfo': {
-        en: 'Git Repository Information',
-        ja: 'Gitリポジトリ情報',
-        zh: 'Git 仓库信息'
-    },
-    'section.diffSettings': {
-        en: 'Diff Settings',
-        ja: '差分設定',
-        zh: '差异设置'
-    },
-    'section.reviewSettings': {
-        en: 'Default Prompt Settings',
-        ja: 'デフォルトプロンプト設定',
-        zh: '默认提示设置'
-    },
-    'section.promptInfo': {
-        en: 'Prompt Information',
-        ja: 'プロンプト情報',
-        zh: '提示信息'
-    },
-    'section.awsConfig': {
-        en: 'AWS Bedrock Configuration',
-        ja: 'AWS Bedrock設定',
-        zh: 'AWS Bedrock 配置'
-    },
-    'section.llmProvider': {
-        en: 'LLM Provider',
-        ja: 'LLMプロバイダー',
-        zh: 'LLM 提供商'
-    },
-    'section.vscodeLmConfig': {
-        en: 'VS Code LM Configuration',
-        ja: 'VS Code LM設定',
-        zh: 'VS Code LM 配置'
-    },
-    // Git info labels
-    'git.currentBranch': {
-        en: 'Current Branch:',
-        ja: '現在のブランチ:',
-        zh: '当前分支:'
-    },
-    'git.latestCommit': {
-        en: 'Latest Commit:',
-        ja: '最新コミット:',
-        zh: '最新提交:'
-    },
-    'git.status': {
-        en: 'Status:',
-        ja: 'ステータス:',
-        zh: '状态:'
-    },
-    'git.compareCommit': {
-        en: 'Compare with Commit:',
-        ja: '比較対象コミット:',
-        zh: '与提交比较:'
-    },
-    'git.selectCommit': {
-        en: 'Select a commit...',
-        ja: 'コミットを選択...',
-        zh: '选择一个提交...'
-    },
-    // Diff settings
-    'diff.contextLines': {
-        en: 'Context Lines (git diff -U option):',
-        ja: 'コンテキスト行数 (git diff -U オプション):',
-        zh: '上下文行数 (git diff -U 选项):'
-    },
-    'diff.contextLinesDesc': {
-        en: 'Number of unchanged lines to show before and after changes (default: 50)',
-        ja: '変更箇所の前後に表示する変更されていない行数 (デフォルト: 50)',
-        zh: '在更改前后显示的未更改行数 (默认: 50)'
-    },
-    'diff.excludeDeletes': {
-        en: 'Exclude deleted files from diff output',
-        ja: '削除されたファイルを差分出力から除外',
-        zh: '在差异输出中排除已删除文件'
-    },
-    'diff.excludeDeletesDesc': {
-        en: 'When checked, only added and modified files will be shown in diff output (--diff-filter=AM)',
-        ja: 'チェックすると、追加・変更されたファイルのみが差分出力に表示されます (--diff-filter=AM)',
-        zh: '选中后，差异输出只显示新增和修改的文件 (--diff-filter=AM)'
-    },
-    'diff.fileExtensions': {
-        en: 'File Extensions Filter:',
-        ja: 'ファイル拡張子フィルター:',
-        zh: '文件扩展名过滤器:'
-    },
-    'diff.fileExtensionsPlaceholder': {
-        en: 'e.g., *.js *.ts *.py *.java (space-separated)',
-        ja: '例: *.js *.ts *.py *.java (スペース区切り)',
-        zh: '例如：*.js *.ts *.py *.java（空格分隔）'
-    },
-    'diff.fileExtensionsDesc': {
-        en: 'Specify file extensions to include in diff output (includes both direct and subdirectory files). Leave empty to include all files. Examples: cs, *.razor, js ts, **/*.py',
-        ja: '差分出力に含めるファイル拡張子を指定します（直下とサブディレクトリの両方を含む）。空にするとすべてのファイルが対象になります。例: cs, *.razor, js ts, **/*.py',
-        zh: '指定要包含在差异输出中的文件扩展名（包括直接和子目录文件）。留空则包含所有文件。例如：cs, *.razor, js ts, **/*.py'
-    },
-    // Default Review settings (for saving)
-    'defaultReview.systemPrompt': {
-        en: 'Default System Prompt:',
-        ja: 'デフォルトシステムプロンプト:',
-        zh: '默认系统提示:'
-    },
-    'defaultReview.systemPromptPlaceholder': {
-        en: 'Enter the default system prompt for code review',
-        ja: 'デフォルトのコードレビュー用システムプロンプトを入力',
-        zh: '输入代码审查的默认系统提示'
-    },
-    'defaultReview.perspective': {
-        en: 'Default Review Perspective:',
-        ja: 'デフォルトレビュー観点:',
-        zh: '默认审查视角:'
-    },
-    'defaultReview.perspectivePlaceholder': {
-        en: 'Enter the default perspective for code review',
-        ja: 'デフォルトのコードレビュー観点を入力',
-        zh: '输入代码审查的默认视角'
-    },
-    // Current Review settings (for execution)
-    'review.systemPrompt': {
-        en: 'System Prompt:',
-        ja: 'システムプロンプト:',
-        zh: '系统提示:'
-    },
-    'review.systemPromptPlaceholder': {
-        en: 'Enter the system prompt for code review',
-        ja: 'コードレビュー用のシステムプロンプトを入力',
-        zh: '输入代码审查的系统提示'
-    },
-    'review.perspective': {
-        en: 'Review Perspective:',
-        ja: 'レビュー観点:',
-        zh: '审查视角:'
-    },
-    'review.perspectivePlaceholder': {
-        en: 'Enter the perspective for code review',
-        ja: 'コードレビューの観点を入力',
-        zh: '输入代码审查的视角'
-    },
-    // AWS settings
-    'aws.accessKey': {
-        en: 'AWS Access Key:',
-        ja: 'AWSアクセスキー:',
-        zh: 'AWS 访问密钥:'
-    },
-    'aws.accessKeyPlaceholder': {
-        en: 'Enter AWS Access Key',
-        ja: 'AWSアクセスキーを入力',
-        zh: '输入 AWS 访问密钥'
-    },
-    'aws.secretKey': {
-        en: 'AWS Secret Key:',
-        ja: 'AWSシークレットキー:',
-        zh: 'AWS 密钥:'
-    },
-    'aws.secretKeyPlaceholder': {
-        en: 'Enter AWS Secret Key',
-        ja: 'AWSシークレットキーを入力',
-        zh: '输入 AWS 密钥'
-    },
-    'aws.region': {
-        en: 'AWS Region:',
-        ja: 'AWSリージョン:',
-        zh: 'AWS 区域:'
-    },
-    'aws.modelName': {
-        en: 'Model Name:',
-        ja: 'モデル名:',
-        zh: '模型名称:'
-    },
-    'aws.modelNamePlaceholder': {
-        en: 'e.g., anthropic.claude-3-5-sonnet-20241022-v2:0',
-        ja: '例: anthropic.claude-3-5-sonnet-20241022-v2:0',
-        zh: '例如：anthropic.claude-3-5-sonnet-20241022-v2:0'
-    },
-    'aws.modelNameDesc': {
-        en: 'Enter a custom model ID or select from the dropdown list of popular AWS Bedrock models',
-        ja: 'カスタムモデルIDを入力するか、主要なAWS Bedrockモデルのドロップダウンリストから選択',
-        zh: '输入自定义模型 ID 或从 AWS Bedrock 热门模型下拉列表中选择'
-    },
-    // LLM Provider settings
-    'llm.provider': {
-        en: 'LLM Provider:',
-        ja: 'LLMプロバイダー:',
-        zh: 'LLM 提供商:'
-    },
-    'llm.providerDesc': {
-        en: 'Choose between AWS Bedrock or VS Code Language Model API',
-        ja: 'AWS BedrockまたはVS Code Language Model APIから選択',
-        zh: '选择 AWS Bedrock 或 VS Code 语言模型 API'
-    },
-    'vscode.family': {
-        en: 'VS Code LM Model:',
-        ja: 'VS Code LMモデル:',
-        zh: 'VS Code LM 模型:'
-    },
-    'vscode.familyDesc': {
-        en: 'Specify the model available through VS Code LM API',
-        ja: 'VS Code LM APIで利用可能なモデルを指定',
-        zh: '指定可通过 VS Code LM API 使用的模型'
-    },
-    // Buttons
-    'button.refresh': {
-        en: '🔄 Refresh',
-        ja: '🔄 更新',
-        zh: '🔄 刷新'
-    },
-    'button.save': {
-        en: '💾 Save Settings',
-        ja: '💾 設定を保存',
-        zh: '💾 保存设置'
-    },
-    'button.preview': {
-        en: '👁️ Preview Diff',
-        ja: '👁️ 差分プレビュー',
-        zh: '👁️ 预览差异'
-    },
-    'button.review': {
-        en: '🚀 Run Code Review',
-        ja: '🚀 コードレビュー実行',
-        zh: '🚀 运行代码审查'
-    },
-    'button.loadDefaults': {
-        en: '📥 Load Defaults',
-        ja: '📥 デフォルト読み込み',
-        zh: '📥 加载默认值'
-    },
-    // Language selection
-    'language.label': {
-        en: 'Language / 言語:',
-        ja: 'Language / 言語:',
-        zh: '语言 / 言語:'
-    },
-    'language.english': {
-        en: 'English',
-        ja: 'English',
-        zh: '英语'
-    },
-    'language.japanese': {
-        en: '日本語',
-        ja: '日本語',
-        zh: '日语'
-    },
-    'language.chinese': {
-        en: 'Chinese',
-        ja: '中国語',
-        zh: '中文'
-    },
-    // Status messages
-    'status.loading': {
-        en: 'Loading...',
-        ja: '読み込み中...',
-        zh: '加载中...'
-    },
-    'status.commitAlert': {
-        en: 'Please select a commit to compare with.',
-        ja: '比較対象のコミットを選択してください。',
-        zh: '请选择要比较的提交。'
-    },
-    
-    // Favorite Prompts Section
-    'section.favoritePrompts': {
-        en: 'Saved Prompts',
-        ja: '保存プロンプト',
-        zh: '保存的提示'
-    },
-    'favoritePrompts.select': {
-        en: 'Select Saved Prompt:',
-        ja: '保存プロンプトを選択:',
-        zh: '选择保存的提示:'
-    },
-    'favoritePrompts.selectOption': {
-        en: 'Select a saved prompt...',
-        ja: '保存されたプロンプトを選択...',
-        zh: '选择已保存的提示...'
-    },
-    'favoritePrompts.title': {
-        en: 'Prompt Title:',
-        ja: 'プロンプトタイトル:',
-        zh: '提示标题:'
-    },
-    'favoritePrompts.titlePlaceholder': {
-        en: 'Enter title for this prompt',
-        ja: 'このプロンプトのタイトルを入力',
-        zh: '输入此提示的标题'
-    },
-    'favoritePrompts.save': {
-        en: 'Save Current Prompt',
-        ja: '現在のプロンプトを保存',
-        zh: '保存当前提示'
-    },
-    'favoritePrompts.delete': {
-        en: 'Delete',
-        ja: '削除',
-        zh: '删除'
-    },
-    'favoritePrompts.manage': {
-        en: 'Manage Saved Prompts',
-        ja: '保存プロンプト管理',
-        zh: '管理保存的提示'
-    },
-    'favoritePrompts.saveSuccess': {
-        en: 'Prompt saved successfully!',
-        ja: 'プロンプトが正常に保存されました！',
-        zh: '提示保存成功！'
-    },
-    'favoritePrompts.saveError': {
-        en: 'Failed to save prompt',
-        ja: 'プロンプトの保存に失敗しました',
-        zh: '保存提示失败'
-    },
-    'favoritePrompts.deleteSuccess': {
-        en: 'Prompt deleted successfully!',
-        ja: 'プロンプトが正常に削除されました！',
-        zh: '提示删除成功！'
-    },
-    'favoritePrompts.deleteError': {
-        en: 'Failed to delete prompt',
-        ja: 'プロンプトの削除に失敗しました',
-        zh: '删除提示失败'
-    },
-    'favoritePrompts.confirmDelete': {
-        en: 'Are you sure you want to delete this prompt?',
-        ja: 'このプロンプトを削除してもよろしいですか？',
-        zh: '确定要删除此提示吗？'
-    },
-    'favoritePrompts.error.titleRequired': {
-        en: 'Please enter a title for the prompt.',
-        ja: 'プロンプトのタイトルを入力してください。',
-        zh: '请输入提示标题。'
-    },
-    'favoritePrompts.error.promptsRequired': {
-        en: 'Please enter both system prompt and review perspective.',
-        ja: 'システムプロンプトとレビュー観点の両方を入力してください。',
-        zh: '请输入系统提示和审查视角。'
-    },
-    'favoritePrompts.error.selectToDelete': {
-        en: 'Please select a prompt to delete.',
-        ja: '削除するプロンプトを選択してください。',
-        zh: '请选择要删除的提示。'
-    },
-    'favoritePrompts.export': {
-        en: 'Export',
-        ja: 'エクスポート',
-        zh: '导出'
-    },
-    'favoritePrompts.import': {
-        en: 'Import',
-        ja: 'インポート',
-        zh: '导入'
-    },
-    'favoritePrompts.exportImportDesc': {
-        en: 'Export or import favorite prompts as JSON',
-        ja: '保存プロンプトのJSONエクスポート/インポート',
-        zh: '以 JSON 格式导入或导出收藏提示'
-    },
-    'favoritePrompts.exportedSuccess': {
-        en: 'Favorite prompts exported successfully: ',
-        ja: '保存プロンプトをエクスポートしました: ',
-        zh: '收藏提示导出成功: '
-    },
-    'favoritePrompts.exportedError': {
-        en: 'Failed to export favorite prompts: ',
-        ja: '保存プロンプトのエクスポートに失敗しました: ',
-        zh: '收藏提示导出失败: '
-    },
-    'favoritePrompts.importedSuccess': {
-        en: 'Import complete. Imported: ',
-        ja: 'インポートが完了しました。インポート数: ',
-        zh: '导入完成。已导入: '
-    },
-    'favoritePrompts.importedError': {
-        en: 'Failed to import favorite prompts: ',
-        ja: '保存プロンプトのインポートに失敗しました: ',
-        zh: '收藏提示导入失败: '
-    },
-    
-    // File Filtering Section
-    'section.fileFiltering': {
-        en: 'File Filtering',
-        ja: 'ファイルフィルタリング',
-        zh: '文件过滤'
-    },
-    'fileFilter.maxSize': {
-        en: 'Maximum File Size (MB):',
-        ja: '最大ファイルサイズ（MB）:',
-        zh: '最大文件大小（MB）:'
-    },
-    'fileFilter.maxSizeDesc': {
-        en: 'Files larger than this size will be excluded from review',
-        ja: 'このサイズより大きいファイルはレビューから除外されます',
-        zh: '大于此大小的文件将被排除在审查之外'
-    },
-    'fileFilter.excludeBinary': {
-        en: 'Exclude Binary Files',
-        ja: 'バイナリファイルを除外',
-        zh: '排除二进制文件'
-    },
-    'fileFilter.excludeBinaryDesc': {
-        en: 'Automatically exclude binary files from code review',
-        ja: 'コードレビューからバイナリファイルを自動的に除外',
-        zh: '自动将二进制文件排除在代码审查之外'
-    },
-    'fileFilter.binaryExtensions': {
-        en: 'Binary File Extensions:',
-        ja: 'バイナリファイル拡張子:',
-        zh: '二进制文件扩展名:'
-    },
-    'fileFilter.binaryExtensionsDesc': {
-        en: 'Comma-separated list of file extensions to treat as binary',
-        ja: 'バイナリとして扱うファイル拡張子のカンマ区切りリスト',
-        zh: '以逗号分隔的二进制文件扩展名列表'
-    },
-    
-    // Export Options Section
-    'section.exportOptions': {
-        en: 'Export Options',
-        ja: 'エクスポートオプション',
-        zh: '导出选项'
-    },
-    'export.includeMetadata': {
-        en: 'Include Metadata',
-        ja: 'メタデータを含める',
-        zh: '包含元数据'
-    },
-    'export.includeMetadataDesc': {
-        en: 'Include git information and review settings in exported files',
-        ja: 'エクスポートファイルにgit情報とレビュー設定を含める',
-        zh: '在导出文件中包含 git 信息和审查设置'
-    },
-    'export.autoTimestamp': {
-        en: 'Auto Timestamp',
-        ja: '自動タイムスタンプ',
-        zh: '自动时间戳'
-    },
-    'export.autoTimestampDesc': {
-        en: 'Automatically add timestamp to exported file names',
-        ja: 'エクスポートファイル名に自動的にタイムスタンプを追加',
-        zh: '自动为导出文件名添加时间戳'
-    },
-    'export.htmlButton': {
-        en: 'Export as HTML',
-        ja: 'HTMLでエクスポート',
-        zh: '导出为 HTML'
-    },
-    'export.jsonButton': {
-        en: 'Export as JSON',
-        ja: 'JSONでエクスポート',
-        zh: '导出为 JSON'
-    },
-    // Misc UI texts
-    'error.loadingCommits': {
-        en: 'Error loading commits',
-        ja: 'コミットの読み込みエラー',
-        zh: '加载提交时出错'
-    },
-    'commit.noMessage': {
-        en: '(No commit message)',
-        ja: '(コミットメッセージなし)',
-        zh: '(无提交信息)'
-    }
-};
 
 export class SettingsViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'diff-lens-settings';
@@ -654,13 +173,15 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
     constructor(private readonly _extensionUri: vscode.Uri) {
         // Load language setting from VS Code configuration
         this._loadLanguageFromConfig();
+        // Initialize language service
+        LanguageService.loadLanguage(this._currentLanguage);
     }
 
     private _loadLanguageFromConfig() {
         const config = vscode.workspace.getConfiguration('diffLens');
         const savedLanguage = config.get<string>('interfaceLanguage', 'en');
         
-        this._currentLanguage = (savedLanguage === 'ja') ? 'ja' : 'en';
+        this._currentLanguage = (savedLanguage === 'ja') ? 'ja' : (savedLanguage === 'zh') ? 'zh' : 'en';
     }
 
     public resolveWebviewView(
@@ -686,6 +207,7 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
                     case 'changeLanguage':
                         console.log('Processing changeLanguage message');
                         this._currentLanguage = message.language;
+                        LanguageService.loadLanguage(this._currentLanguage);
                         this._saveLanguageToConfig(message.language);
                         this._updateWebviewContent();
                         return;
@@ -1155,7 +677,7 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
     }
 
     private _getMessage(key: string): string {
-        return MESSAGES[key]?.[this._currentLanguage] || key;
+        return LanguageService.getMessage(key);
     }
 
     private _getHtmlForWebview(webview: vscode.Webview): string {
@@ -1649,10 +1171,11 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
             <div class="panel-content" id="promptManagementPanel">
                 <div class="form-group">
                     <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
+                        <small style="color: var(--vscode-descriptionForeground); display:block;">${this._getMessage('favoritePrompts.exportDesc')}</small>
                         <button class="secondary" style="width:100%;" onclick="exportFavoritePrompts()">${this._getMessage('favoritePrompts.export')}</button>
+                        <small style="color: var(--vscode-descriptionForeground); display:block;">${this._getMessage('favoritePrompts.importDesc')}</small>
                         <button class="secondary" style="width:100%;" onclick="importFavoritePrompts()">${this._getMessage('favoritePrompts.import')}</button>
                     </div>
-                    <small style="color: var(--vscode-descriptionForeground); display:block; margin-top:8px;">${this._getMessage('favoritePrompts.exportImportDesc')}</small>
                 </div>
             </div>
         </div>
