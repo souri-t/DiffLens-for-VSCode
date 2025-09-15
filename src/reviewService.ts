@@ -46,7 +46,9 @@ Please provide a detailed code review with specific suggestions for improvement.
 		const responseBody = JSON.parse(new TextDecoder().decode(response.body));
 		return {
 			modelName: config.modelName,
-			review: responseBody.content[0].text
+			review: responseBody.content[0].text,
+			systemPrompt: config.systemPrompt,
+			reviewPerspective: config.reviewPerspective
 		};
 	} catch (error) {
 		throw new Error(`Failed to get review from Bedrock: ${error}`);
@@ -110,7 +112,9 @@ Please provide a detailed code review with specific suggestions for improvement.
 		
 		return {
 			modelName: `${model.vendor}/${model.family} (${model.name})`,
-			review: response
+			review: response,
+			systemPrompt: config.systemPrompt,
+			reviewPerspective: config.reviewPerspective
 		};
 	} catch (error) {
 		if (error instanceof vscode.LanguageModelError) {
@@ -133,9 +137,9 @@ export async function reviewWithLLM(diff: string, config: ReviewConfig): Promise
 }
 
 // Show review results in a new document
-export async function showReviewResults(reviewResult: ReviewResult, gitInfo?: any, exclusionSummary?: any): Promise<void> {
+export async function showReviewResults(reviewResult: ReviewResult, gitInfo?: any, exclusionSummary?: any, diffText?: string): Promise<void> {
 	// Store the results for export functionality FIRST
-	reviewService.setLastReviewResult(reviewResult, gitInfo);
+	reviewService.setLastReviewResult(reviewResult, gitInfo, diffText);
 
 	const timestamp = new Date().toLocaleString();
 	
@@ -158,25 +162,27 @@ ${reviewResult.review}`;
 		language: 'markdown'
 	});
 	await vscode.window.showTextDocument(doc);
-	// Export functionality is disabled for this release
-	// const exportOption = await vscode.window.showInformationMessage(
-	// 	'コードレビューが完了しました。結果をエクスポートしますか？',
-	// 	'HTML', 'JSON', 'いいえ'
-	// );
+	// Show export options
+	const exportOption = await vscode.window.showInformationMessage(
+		'コードレビューが完了しました。結果をエクスポートしますか？',
+		'はい', 'いいえ'
+	);
 
-	// if (exportOption === 'HTML' || exportOption === 'JSON') {
-	// 	vscode.commands.executeCommand('diff-lens.exportReview', reviewResult, gitInfo);
-	// }
+	if (exportOption === 'はい') {
+		vscode.commands.executeCommand('diff-lens.exportReview', reviewResult, gitInfo);
+	}
 }
 
 // Review service singleton to store last review results
 class ReviewService {
 	private lastReviewResult: ReviewResult | null = null;
 	private lastGitInfo: any = null;
+	private lastDiffText: string = '';
 
-	setLastReviewResult(reviewResult: ReviewResult, gitInfo: any): void {
+	setLastReviewResult(reviewResult: ReviewResult, gitInfo: any, diffText?: string): void {
 		this.lastReviewResult = reviewResult;
 		this.lastGitInfo = gitInfo;
+		this.lastDiffText = diffText || '';
 	}
 
 	getLastReviewResult(): ReviewResult | null {
@@ -185,6 +191,10 @@ class ReviewService {
 
 	getLastGitInfo(): any {
 		return this.lastGitInfo;
+	}
+
+	getLastDiffText(): string {
+		return this.lastDiffText;
 	}
 }
 
