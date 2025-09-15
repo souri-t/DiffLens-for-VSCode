@@ -2473,8 +2473,6 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
         try {
             const result = await FavoritePromptsService.saveFavoritePrompt(
                 data.title,
-                '', // description - empty for now
-                [], // tags - empty for now
                 data.systemPrompt,
                 data.reviewPerspective
             );

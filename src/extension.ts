@@ -220,24 +220,12 @@ async function saveFavoritePrompt() {
 		}
 	});
 
-	if (!name) return;
-
-	const description = await vscode.window.showInputBox({
-		prompt: 'プロンプトの説明を入力してください（任意）',
-		value: ''
-	});
-
-	const tagsInput = await vscode.window.showInputBox({
-		prompt: 'タグをカンマ区切りで入力してください（任意）',
-		value: ''
-	});
-
-	const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+	if (!name) {
+		return;
+	}
 
 	const result = await FavoritePromptsService.saveFavoritePrompt(
 		name,
-		description || '',
-		tags,
 		currentState.systemPrompt,
 		currentState.reviewPerspective
 	);
@@ -260,8 +248,7 @@ async function manageFavoritePrompts() {
 
 	const items = prompts.map(prompt => ({
 		label: prompt.name,
-		description: prompt.description,
-		detail: `使用回数: ${prompt.usage.count} | タグ: ${prompt.tags.join(', ') || 'なし'}`,
+		detail: `使用回数: ${prompt.usage.count}`,
 		prompt
 	}));
 
@@ -271,7 +258,9 @@ async function manageFavoritePrompts() {
 		matchOnDetail: true
 	});
 
-	if (!selected) return;
+	if (!selected) {
+		return;
+	}
 
 	const action = await vscode.window.showQuickPick([
 		{ label: '$(play) 適用', action: 'apply' },
@@ -282,7 +271,9 @@ async function manageFavoritePrompts() {
 		placeHolder: 'アクションを選択してください'
 	});
 
-	if (!action) return;
+	if (!action) {
+		return;
+	}
 
 	switch (action.action) {
 		case 'apply':
@@ -316,7 +307,7 @@ async function manageFavoritePrompts() {
 			break;
 
 		case 'preview':
-			const previewContent = `# ${selected.prompt.name}\n\n${selected.prompt.description}\n\n## System Prompt\n\n${selected.prompt.systemPrompt}\n\n## Review Perspective\n\n${selected.prompt.reviewPerspective}\n\n## Metadata\n\n- Created: ${new Date(selected.prompt.createdAt).toLocaleString()}\n- Updated: ${new Date(selected.prompt.updatedAt).toLocaleString()}\n- Usage Count: ${selected.prompt.usage.count}\n- Tags: ${selected.prompt.tags.join(', ') || 'None'}`;
+			const previewContent = `# ${selected.prompt.name}\n\n## System Prompt\n\n${selected.prompt.systemPrompt}\n\n## Review Perspective\n\n${selected.prompt.reviewPerspective}\n\n## Metadata\n\n- Created: ${new Date(selected.prompt.createdAt).toLocaleString()}\n- Updated: ${new Date(selected.prompt.updatedAt).toLocaleString()}\n- Usage Count: ${selected.prompt.usage.count}`;
 			
 			const doc = await vscode.workspace.openTextDocument({
 				content: previewContent,
@@ -339,7 +330,9 @@ async function exportReview(reviewResult: any, gitInfo: any) {
 		placeHolder: 'エクスポート形式を選択してください'
 	});
 
-	if (!format) return;
+	if (!format) {
+		return;
+	}
 
 	try {
 		let result;
